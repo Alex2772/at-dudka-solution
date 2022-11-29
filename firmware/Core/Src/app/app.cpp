@@ -62,6 +62,13 @@ extern "C" void app_run() {
     }));
 
     if constexpr(config::CALIBRATION) {
+
+        app::globals.initialResistance = 10.f;
+        app::globals.fireAllowed = true;
+        app::fireMosfet() = 0;
+
+        HAL_TIM_Base_Start_IT(&htim4);
+
         app::showScreen(std::make_unique<ScreenCalibration>());
     } else {
         if (sram::ram().lock) {

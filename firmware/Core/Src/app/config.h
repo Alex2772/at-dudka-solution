@@ -51,8 +51,8 @@ namespace config {
         static constexpr CalibrationCurve COIL_VOLTAGE({64.f, 2396.f},
                                                        {0.21f, 3.76f});
 
-        static constexpr CalibrationCurve SHUNT_CURRENT({0.056f, 0.207f},
-                                                        {1.14f, 12.5f});
+        static constexpr CalibrationCurve SHUNT_CURRENT({0.059f, 0.238f},
+                                                        {1.14f, 13.5f});
 
     }
 
@@ -107,8 +107,8 @@ namespace config {
             }
         };
 
-        static constexpr Pin JOY_DOWN  = { Pin::B, GPIO_PIN_15 };
-        static constexpr Pin JOY_OK    = { Pin::B, GPIO_PIN_14 };
+        static constexpr Pin JOY_OK    = { Pin::B, GPIO_PIN_15 };
+        static constexpr Pin JOY_DOWN  = { Pin::B, GPIO_PIN_14 };
         static constexpr Pin JOY_RIGHT = { Pin::B, GPIO_PIN_13 };
         static constexpr Pin JOY_UP    = { Pin::B, GPIO_PIN_12 };
         static constexpr Pin JOY_LEFT  = { Pin::A, GPIO_PIN_8 };
