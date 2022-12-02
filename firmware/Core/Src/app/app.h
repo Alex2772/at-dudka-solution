@@ -60,6 +60,8 @@ namespace app {
     void onKeyDown(input::Key key);
     void onKeyUp(input::Key key);
     void onKeyLongPressFrame(input::Key key);
+
+    bool fireButtonPressed();
 }
 
 

@@ -36,6 +36,8 @@ extern const std::uint8_t image2cpp_lock_png[];
 extern const std::uint8_t image2cpp_poweroff_png[];
 extern const std::uint8_t image2cpp_warning_png[];
 
+using namespace std::chrono;
+using namespace std::chrono_literals;
 
 app::Globals app::globals;
 
@@ -78,19 +80,50 @@ extern "C" void app_run() {
     } else {
         if (sram::ram().lock) {
             if (!input::isKeyDown(input::Key::OK)) {
-                fb.image({32,  32}, image2cpp_lock_png);
-                fb.string({32, 52}, Color::WHITE, "Блокировка", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-                fb.string({32, 52 + 14}, Color::WHITE, "Нажмите", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-                fb.string({32, 52 + 14 + 12}, Color::WHITE, "клавишу ОК", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-                display.push(fb);
+                auto drawLockScreen = [&] {
+                    fb.image({32,  32}, image2cpp_lock_png);
+                    fb.string({32, 52}, Color::WHITE, "Блокировка", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                    fb.string({32, 52 + 14}, Color::WHITE, "Нажмите", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                    fb.string({32, 52 + 14 + 12}, Color::WHITE, "клавишу ОК", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                    display.push(fb);
+                };
 
-                auto timeout = HAL_GetTick() + 3000;
-                while (!input::isKeyDown(input::Key::OK) && timeout > HAL_GetTick()) {
-                    HAL_Delay(1);
-                }
-                if (!input::isKeyDown(input::Key::OK)) {
+                drawLockScreen();
+                bool isLockScreenVisible = true;
+
+                auto waitFor = [&](std::chrono::milliseconds time) {
+                    auto waitStartTime = HAL_GetTick();
+                    auto lockScreenAppearedTime = HAL_GetTick();
+                    while (!input::isKeyDown(input::Key::OK) && waitStartTime + time.count() > HAL_GetTick()) {
+                        HAL_Delay(1);
+
+                        if (isLockScreenVisible) {
+                            if (HAL_GetTick() - lockScreenAppearedTime > 3'000) {
+                                fb.clear();
+                                display.push(fb);
+                                isLockScreenVisible = false;
+                                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                            }
+                        }
+
+                        if (app::fireButtonPressed()) {
+                            waitStartTime = HAL_GetTick();
+
+                            if (!isLockScreenVisible) {
+                                drawLockScreen();
+                                isLockScreenVisible = true;
+                                lockScreenAppearedTime = HAL_GetTick();
+                                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                            }
+                        }
+                    }
+                    return !input::isKeyDown(input::Key::OK);
+                };
+
+                if (waitFor(30s)) {
                     app::shutdown();
                 }
+
             }
 
             sram::ram().lock = false;
@@ -152,10 +185,15 @@ extern "C" void app_run() {
 
 }
 
+
+bool app::fireButtonPressed() {
+    return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15);
+}
+
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim4) {
-        const bool isFiring = app::globals.fireAllowed && HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15);
+        const bool isFiring = app::globals.fireAllowed && app::fireButtonPressed();
         auto instantCurrent = adc::current();
 
         app::globals.currentResistance = adc::coilResistance();
