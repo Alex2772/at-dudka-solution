@@ -185,7 +185,7 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 
-  .user_data 0x08020000:
+  .user_data 0x08040000:
   {
     . = ALIGN(4);
      KEEP(*(.user_data))

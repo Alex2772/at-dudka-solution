@@ -21,7 +21,7 @@
 #include "app/adc.h"
 #include "app/app.h"
 
-void ScreenCalibration::render(Framebuffer& fb) {
+void ScreenCalibration::render(FramebufferImpl& fb) {
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y}, Color::WHITE, title, FONT_FACE_BITOCRA_4X7);
         fb.string({60, y}, Color::WHITE, value, FONT_FACE_BITOCRA_4X7, TextAlign::RIGHT);

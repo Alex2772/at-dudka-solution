@@ -18,32 +18,25 @@
 #pragma once
 
 
-#include "stm32f4xx_hal.h"
-#include "Framebuffer.h"
+#include <functional>
+#include "ScreenDialog.h"
 
-/**
- * @brief SSD1306 display driver.
- * @details
- * Unlike other implementation, this one follows the Single Responsibility Principle (SRP) - this class is responsible
- * only for controlling the display. For drawing function refer to Framebuffer class.
- */
-class SSD1306 {
+class ScreenMessageDialog: public ScreenDialog {
 public:
-    SSD1306(I2C_HandleTypeDef& i2c, std::uint8_t i2cAddress = 0x3C << 1);
+    ScreenMessageDialog(std::string message, std::function<void()> onConfirm): mMessage(std::move(message)), mOnConfirm(std::move(onConfirm)) {}
 
-    void push(const Framebuffer<>& framebuffer);
+    void renderDialog(FramebufferImpl& fb) override;
 
-    void setDisplayEnabled(bool v);
+    void onKeyDown(input::Key key) override;
 
-private:
-    I2C_HandleTypeDef& mI2C;
-    std::uint8_t mI2cAddress;
+    void setIcon(const uint8_t* icon) {
+        mIcon = icon;
+    }
 
-    void writeCommand(std::uint8_t command);
-
-    void setContrast(std::uint8_t contrast);
-
-    void writeData(const uint8_t* data, size_t size);
+protected:
+    std::string mMessage;
+    const std::uint8_t* mIcon;
+    std::function<void()> mOnConfirm;
 };
 
 

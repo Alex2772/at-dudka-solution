@@ -15,14 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
 
+#include "ScreenMessageDialog.h"
 
-#include "IScreen.h"
+void ScreenMessageDialog::renderDialog(FramebufferImpl& fb) {
+    //fb.pixel({0, 1}, Color::WHITE);
+    const auto middle = fb.transformedSize().x / 2;
 
-class ScreenCalibration: public IScreen {
-public:
-    void render(FramebufferImpl& fb) override;
-};
+    if (mIcon) {
+        fb.image({middle, 16}, mIcon);
+    }
 
+    fb.string({middle, 30}, Color::WHITE, mMessage, FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+}
 
+void ScreenMessageDialog::onKeyDown(input::Key key) {
+    ScreenDialog::onKeyDown(key);
+
+    switch (key) {
+        case input::Key::LEFT:
+        case input::Key::OK:
+            mOnConfirm();
+            close();
+            break;
+    }
+}

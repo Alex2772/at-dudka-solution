@@ -82,7 +82,7 @@ void sram::save() {
         assert(0);
     }
 
-    FLASH_Erase_Sector(FLASH_SECTOR_5, FLASH_VOLTAGE_RANGE_3);
+    FLASH_Erase_Sector(6, FLASH_VOLTAGE_RANGE_3);
 
     ramConfigWithCrc().crc = computeCrc(ram());
 

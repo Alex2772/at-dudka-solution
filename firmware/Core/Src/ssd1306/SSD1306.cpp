@@ -75,7 +75,7 @@ SSD1306::SSD1306(I2C_HandleTypeDef& i2c, std::uint8_t i2cAddress) :
 
 }
 
-void SSD1306::push(const Framebuffer& framebuffer) {
+void SSD1306::push(const Framebuffer<>& framebuffer) {
 
     // Write data to each page of RAM. Number of pages
     // depends on the screen height:

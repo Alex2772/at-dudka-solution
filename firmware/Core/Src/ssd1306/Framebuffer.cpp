@@ -22,13 +22,9 @@
 #include <numeric>
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer() {
-    clear();
-}
 
-
-void Framebuffer::clear() {
-    std::memset(mData.data(), 0, sizeof(mData));
+void FramebufferImpl::clear() {
+    std::memset(mStorage, 0, mSize.x * mSize.y / 8);
 }
 static char toKOI8(char c) {
     const char алфавитБожественногоЯзыка[] = {
@@ -97,7 +93,7 @@ static std::vector<const font_char_desc_t*> compileString(const font_info_t* inf
     return output;
 }
 
-void Framebuffer::string(glm::ivec2 position, Color color, std::string_view string, font_face_t font, TextAlign align) {
+int FramebufferImpl::string(glm::ivec2 position, Color color, std::string_view string, font_face_t font, TextAlign align) {
     const auto info = font_builtin_fonts[font];
     const auto compiledString = compileString(info, string, font == FONT_FACE_TERMINUS_6X12_KOI8_R);
 
@@ -116,6 +112,8 @@ void Framebuffer::string(glm::ivec2 position, Color color, std::string_view stri
         }
     }
 
+    const auto initialPositionX = position.x;
+
     for (auto compiledChar : compiledString) {
         const auto charBitmap = info->bitmap + std::uint32_t(compiledChar->offset);
 
@@ -132,4 +130,67 @@ void Framebuffer::string(glm::ivec2 position, Color color, std::string_view stri
         }
         position.x += compiledChar->width;
     }
+
+    return position.x - initialPositionX;
+}
+
+void FramebufferImpl::image(glm::ivec2 position, const std::uint8_t* data) {
+    glm::ivec2 imageSize = { data[0], data[1] };
+    data += 2;
+    position -= imageSize / 2;
+
+    for (auto imgY = 0; imgY < imageSize.y / 8; ++imgY) {
+        for (auto imgX = 0; imgX < imageSize.x; ++imgX) {
+            auto byte = data[imgY * imageSize.x + imgX];
+            for (unsigned i = 0; i < 8 && byte != 0; ++i, byte >>= 1) {
+                if (byte & 0b1) {
+                    pixel(position + glm::ivec2{imgX, imgY * 8 + i}, Color::WHITE);
+                }
+            }
+        }
+    }
+}
+
+void FramebufferImpl::rect(glm::ivec2 position, glm::ivec2 size, Color color) {
+    for (unsigned y = 0; y < size.y; ++y) {
+        for (unsigned x = 0; x < size.x; ++x) {
+            pixel(position + glm::ivec2{x, y}, color);
+        }
+    }
+}
+
+void FramebufferImpl::roundedRect(glm::ivec2 position, glm::ivec2 size, Color color) {
+    rect(position, size, color);
+    pixel(position, Color::INVERT);
+    size -= 1;
+    pixel(position + glm::ivec2{size.x, 0}, Color::INVERT);
+    pixel(position + glm::ivec2{0, size.y}, Color::INVERT);
+    pixel(position + size, Color::INVERT);
+}
+
+void FramebufferImpl::shade() {
+    unsigned filter = 0b10101010;
+    for (auto i = 0; i < mSize.x * mSize.y / 8; ++i) {
+        mStorage[i] &= filter;
+        filter = ~filter;
+    }
+}
+
+
+void FramebufferImpl::frameBuffer(glm::ivec2 position, glm::ivec2 size, const FramebufferImpl& fb) {
+    for (unsigned y = 0; y < size.y; ++y) {
+        for (unsigned x = 0; x < size.x; ++x) {
+            if (fb.getPixel({x, y})) {
+                pixel(glm::ivec2{x, y} + position, Color::WHITE);
+            }
+        }
+    }
+}
+
+void FramebufferImpl::rectBorder(glm::ivec2 position, glm::ivec2 size, Color color) {
+    rect(position, {size.x, 1}, color);
+    rect(position + glm::ivec2{0, size.y - 1}, {size.x, 1}, color);
+
+    rect(position + glm::ivec2{0, 1}, {1, size.y - 2}, color);
+    rect(position + glm::ivec2{size.x - 1, 1}, {1, size.y - 2}, color);
 }

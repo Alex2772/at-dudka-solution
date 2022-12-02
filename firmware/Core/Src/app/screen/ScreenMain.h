@@ -23,7 +23,7 @@
 class ScreenMain: public IScreen {
 public:
     ScreenMain();
-    void render(Framebuffer& fb) override;
+    void render(FramebufferImpl& fb) override;
     void onKeyDown(input::Key key) override;
 
     void handleKeyTemperature(input::Key key) const;

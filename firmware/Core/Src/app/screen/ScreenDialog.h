@@ -25,6 +25,12 @@ public:
     ~ScreenDialog() override = default;
 
     void onKeyLongPressFrame(input::Key key) override;
+
+    virtual void renderDialog(FramebufferImpl& fb) = 0;
+
+    void render(FramebufferImpl& fb) override;
+
+    bool hasTransparency() override;
 };
 
 

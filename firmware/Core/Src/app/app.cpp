@@ -30,6 +30,11 @@
 #include <glm/gtc/constants.hpp>
 #include <vector>
 
+extern const std::uint8_t image2cpp_logo_png[];
+extern const std::uint8_t image2cpp_no_coil_png[];
+extern const std::uint8_t image2cpp_lock_png[];
+extern const std::uint8_t image2cpp_poweroff_png[];
+extern const std::uint8_t image2cpp_warning_png[];
 
 
 app::Globals app::globals;
@@ -73,9 +78,10 @@ extern "C" void app_run() {
     } else {
         if (sram::ram().lock) {
             if (!input::isKeyDown(input::Key::OK)) {
-                fb.string({32, 32}, Color::WHITE, "Блокировка", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-                fb.string({32, 45}, Color::WHITE, "Нажмите", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-                fb.string({32, 45 + 12}, Color::WHITE, "клавишу ОК", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                fb.image({32,  32}, image2cpp_lock_png);
+                fb.string({32, 52}, Color::WHITE, "Блокировка", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                fb.string({32, 52 + 14}, Color::WHITE, "Нажмите", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                fb.string({32, 52 + 14 + 12}, Color::WHITE, "клавишу ОК", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
                 display.push(fb);
 
                 auto timeout = HAL_GetTick() + 3000;
@@ -90,7 +96,7 @@ extern "C" void app_run() {
             sram::ram().lock = false;
         }
 
-        fb.string({32, 32}, Color::WHITE, "Запуск...", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+        fb.image({32, 64}, image2cpp_logo_png);
         display.push(fb);
 
         app::fireMosfet() = 10000;
@@ -108,9 +114,10 @@ extern "C" void app_run() {
         HAL_TIM_Base_Start_IT(&htim4);
         if (!app::globals.initialResistance) {
             fb.clear();
-            fb.string({32, 32}, Color::WHITE, "Нет койла", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+            fb.string({32, 0}, Color::WHITE, "Где койл?", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+            fb.image({32, 64}, image2cpp_no_coil_png);
             display.push(fb);
-            HAL_Delay(1000);
+            HAL_Delay(3000);
             app::shutdown();
         }
 
@@ -123,12 +130,17 @@ extern "C" void app_run() {
 
     for (;;) {
         gUiThreadQueue.process();
-
         input::frame();
 
         fb.clear();
         if (!gScreens.empty()) {
-            gScreens.back()->render(fb);
+            auto firstNonTransparent = (std::find_if(gScreens.rbegin(), gScreens.rend(), [](const auto& screen) {
+                return !screen->hasTransparency();
+            }) + 1).base();
+
+            for (auto it = firstNonTransparent; it != gScreens.end(); ++it) {
+                (*it)->render(fb);
+            }
         }
 
         display.push(fb);
@@ -165,6 +177,21 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000 * glm::abs(glm::sin(frameIndex / 500.f * glm::pi<float>() * 2.f)));
                 frameIndex += 1;
                 frameIndex %= 500;
+
+                if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
+                    static bool coilDisconnectedFlag = false;
+                    if (!coilDisconnectedFlag) {
+                        coilDisconnectedFlag = true;
+                        app::runOnUiThread([] {
+                            app::globals.fireAllowed = false;
+                            auto dialog = std::make_unique<ScreenMessageDialog>("Отвал койла", [] {
+                                app::shutdown();
+                            });
+                            dialog->setIcon(image2cpp_warning_png);
+                            app::showScreen(std::move(dialog));
+                        });
+                    }
+                }
             }
         }
 
@@ -184,10 +211,12 @@ void app::onKeyDown(input::Key key) {
     app::resetAutoShutdownTimer();
 
     if (gScreens.size() <= 1 && key == input::Key::LEFT) {
-        app::showScreen(std::make_unique<ScreenConfirmDialog>("Выключить?", [] {
+        auto dialog = std::make_unique<ScreenConfirmDialog>("Заблокировать?", [] {
             sram::ram().lock = true;
             app::shutdown();
-        }));
+        });
+        dialog->setIcon(image2cpp_poweroff_png);
+        app::showScreen(std::move(dialog));
     } else {
         if (!gScreens.empty()) {
             gScreens.back()->onKeyDown(key);

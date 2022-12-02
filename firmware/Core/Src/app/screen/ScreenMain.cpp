@@ -25,7 +25,7 @@
 
 #include <stm32f4xx.h>
 
-void ScreenMain::render(Framebuffer& fb) {
+void ScreenMain::render(FramebufferImpl& fb) {
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y + 1}, Color::WHITE, title, FONT_FACE_TERMINUS_6X12_KOI8_R);
         fb.string({60, y}, Color::WHITE, value, FONT_FACE_TERMINUS_BOLD_8X14_ISO8859_1, TextAlign::RIGHT);
@@ -34,42 +34,18 @@ void ScreenMain::render(Framebuffer& fb) {
 
     fb.string({32, 0}, Color::WHITE, util::format("%d\xb0""C", app::globals.maxTemperature), FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1, TextAlign::MIDDLE);
 
-
-
-    row(28, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
-    row(42, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
+    fb.rect({0, 0}, {64, 24}, Color::INVERT);
     {
-        row(56, "T", util::format("%d\xb0""C", app::globals.currentTemperature));
-
-        row(70, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
+        auto w = fb.string({32, 30}, Color::WHITE, "SS316L", FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
+        fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
-
-
-    std::string gavno;
-
-    if (input::isKeyDown(input::Key::UP)) {
-        gavno += "^";
-    }
-    if (input::isKeyDown(input::Key::DOWN)) {
-        gavno += "v";
-    }
-    if (input::isKeyDown(input::Key::LEFT)) {
-        gavno += "<";
-    }
-    if (input::isKeyDown(input::Key::RIGHT)) {
-        gavno += ">";
-    }
-    if (input::isKeyDown(input::Key::OK)) {
-        gavno += "o";
-    }
-
-
-    fb.string({0, 100}, Color::WHITE, gavno, FONT_FACE_TERMINUS_6X12_KOI8_R);
-
+    row(128 - 12 * 4, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
+    row(128 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
+    row(128 - 12 * 2, "T", util::format("%d\xb0""C", app::globals.currentTemperature));
+    row(128 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
 }
 
 ScreenMain::ScreenMain() {
-
     adc::setShutter(config::SHUTTER_DEFAULT);
     app::globals.fireAllowed = true;
 }

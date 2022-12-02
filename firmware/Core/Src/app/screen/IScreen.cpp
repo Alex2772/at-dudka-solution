@@ -34,3 +34,7 @@ void IScreen::close() {
 void IScreen::onKeyLongPressFrame(input::Key key) {
 
 }
+
+bool IScreen::hasTransparency() {
+    return false;
+}

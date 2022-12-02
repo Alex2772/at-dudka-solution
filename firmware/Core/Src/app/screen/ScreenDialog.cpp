@@ -23,3 +23,32 @@ void ScreenDialog::onKeyLongPressFrame(input::Key key) {
         close();
     }
 }
+
+void ScreenDialog::render(FramebufferImpl& fb) {
+    fb.shade();
+
+    constexpr glm::ivec2 SIZE = { 64 - 8, 128 - 24 };
+    const glm::ivec2 POSITION = (glm::ivec2{fb.size().y, fb.size().x} - SIZE) / 2;
+
+    fb.rect(POSITION - glm::ivec2(3), SIZE + glm::ivec2(3 * 2), Color::BLACK);
+    fb.rectBorder(POSITION - glm::ivec2(2), SIZE + glm::ivec2(2 * 2), Color::WHITE);
+
+    Framebuffer<SIZE.x, SIZE.y> dialogFb;
+    dialogFb.clear();
+
+
+    dialogFb.setTransform(glm::imat3x3({
+       0, -1,  0,
+       1, 0,  0,
+       0, SIZE.y - 1,  0,
+    }));
+
+    renderDialog(dialogFb);
+
+    fb.frameBuffer(POSITION, SIZE, dialogFb);
+}
+
+
+bool ScreenDialog::hasTransparency() {
+    return true;
+}

@@ -18,9 +18,6 @@
 
 #include "ScreenConfirmDialog.h"
 
-void ScreenConfirmDialog::render(Framebuffer& fb) {
-    fb.string({32, 0}, Color::WHITE, mMessage, FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
-}
 
 void ScreenConfirmDialog::onKeyDown(input::Key key) {
     ScreenDialog::onKeyDown(key);

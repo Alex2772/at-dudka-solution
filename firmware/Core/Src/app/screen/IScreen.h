@@ -24,10 +24,12 @@ class IScreen {
 public:
     virtual ~IScreen() = default;
 
-    virtual void render(Framebuffer& fb) = 0;
+    virtual void render(FramebufferImpl& fb) = 0;
     virtual void onKeyDown(input::Key key);
     virtual void onKeyUp(input::Key key);
     virtual void onKeyLongPressFrame(input::Key key);
+
+    virtual bool hasTransparency();
 
     void close();
 };

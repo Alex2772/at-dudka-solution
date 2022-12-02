@@ -19,19 +19,14 @@
 
 
 #include <functional>
-#include "ScreenDialog.h"
+#include "ScreenMessageDialog.h"
 
-class ScreenConfirmDialog: public ScreenDialog {
+class ScreenConfirmDialog: public ScreenMessageDialog {
 public:
-    ScreenConfirmDialog(std::string message, std::function<void()> onConfirm): mMessage(std::move(message)), mOnConfirm(std::move(onConfirm)) {}
-
-    void render(Framebuffer& fb) override;
+    ScreenConfirmDialog(std::string message, std::function<void()> onConfirm): ScreenMessageDialog(std::move(message), std::move(onConfirm)) {}
 
     void onKeyDown(input::Key key) override;
 
-private:
-    std::string mMessage;
-    std::function<void()> mOnConfirm;
 };
 
 
