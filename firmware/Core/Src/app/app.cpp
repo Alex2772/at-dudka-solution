@@ -122,13 +122,14 @@ extern "C" void app_run() {
                     return !input::isKeyDown(input::Key::OK);
                 };
 
-                if (waitFor(30s)) {
+                if (waitFor(5s)) {
                     app::shutdown();
                 }
 
             }
 
             sram::ram().lock = false;
+            fb.clear();
         }
 
         fb.image({32, 64}, image2cpp_logo_png);
