@@ -139,7 +139,7 @@ void FramebufferImpl::image(glm::ivec2 position, const std::uint8_t* data) {
     data += 2;
     position -= imageSize / 2;
 
-    for (auto imgY = 0; imgY < imageSize.y / 8; ++imgY) {
+    for (auto imgY = 0; imgY < (imageSize.y + 7) / 8; ++imgY) {
         for (auto imgX = 0; imgX < imageSize.x; ++imgX) {
             auto byte = data[imgY * imageSize.x + imgX];
             for (unsigned i = 0; i < 8 && byte != 0; ++i, byte >>= 1) {

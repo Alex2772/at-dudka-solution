@@ -25,6 +25,9 @@
 
 #include <stm32f4xx.h>
 
+extern const std::uint8_t image2cpp_logo_small_png[];
+extern const std::uint8_t image2cpp_charging_png[];
+
 void ScreenMain::render(FramebufferImpl& fb) {
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y + 1}, Color::WHITE, title, FONT_FACE_TERMINUS_6X12_KOI8_R);
@@ -39,10 +42,23 @@ void ScreenMain::render(FramebufferImpl& fb) {
         auto w = fb.string({32, 30}, Color::WHITE, "SS316L", FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
-    row(128 - 12 * 4, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
-    row(128 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
-    row(128 - 12 * 2, "T", util::format("%d\xb0""C", app::globals.currentTemperature));
-    row(128 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
+    row(116 - 12 * 4, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
+    row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
+    row(116 - 12 * 2, "T", util::format("%d\xb0""C", app::globals.currentTemperature));
+    row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
+
+    fb.image({7, 124}, image2cpp_logo_small_png);
+
+    // battery
+    if (app::isCharging()) fb.image({18, 124}, image2cpp_charging_png);
+    if (app::batteryLevel() != 0) {
+        fb.rectBorder({24, 120}, { 20, 8 }, Color::WHITE);
+        fb.rect({24 + 20, 120 + 2}, { 2, 4 }, Color::WHITE);
+        fb.rect({24 + 2, 120 + 2}, {app::batteryLevel() * 16 / 100, 4}, Color::INVERT);
+        fb.string({63, 121}, Color::WHITE, util::format("%d%%", app::batteryLevel()), FONT_FACE_BITOCRA_4X7, TextAlign::RIGHT);
+    } else {
+        
+    }
 }
 
 ScreenMain::ScreenMain() {

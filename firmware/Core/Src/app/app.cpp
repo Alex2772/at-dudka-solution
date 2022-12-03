@@ -43,6 +43,8 @@ app::Globals app::globals;
 
 FunctionQueue gUiThreadQueue;
 std::vector<std::unique_ptr<IScreen>> gScreens;
+unsigned gLastBatteryUpdate = 0;
+unsigned gBatteryLevel = 0;
 
 extern "C" void app_run() {
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
@@ -233,6 +235,18 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             }
         }
 
+        if (int(HAL_GetTick()) - gLastBatteryUpdate > 60'000 || gLastBatteryUpdate == 0) {
+            if (app::fireMosfet() == 0) {
+                if (glm::abs(adc::batteryVoltage() - app::globals.smoothBatteryVoltage) < 0.0001f) { // filter
+                    gLastBatteryUpdate = HAL_GetTick();
+                    constexpr auto MIN = 3.3f;
+                    constexpr auto MAX = 4.15f;
+
+                    gBatteryLevel = glm::clamp(int((app::globals.smoothBatteryVoltage - MIN) / (MAX - MIN) * 100.f), 1,
+                                               100);
+                }
+            }
+        }
     }
 }
 
@@ -296,4 +310,12 @@ void app::shutdown() {
 
 void app::resetAutoShutdownTimer() {
     globals.lastActionTick = HAL_GetTick();
+}
+
+int app::batteryLevel() {
+    return gBatteryLevel;
+}
+
+bool app::isCharging() {
+    return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 }

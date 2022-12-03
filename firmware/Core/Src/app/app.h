@@ -61,7 +61,10 @@ namespace app {
     void onKeyUp(input::Key key);
     void onKeyLongPressFrame(input::Key key);
 
+    int batteryLevel();
+
     bool fireButtonPressed();
+    bool isCharging();
 }
 
 

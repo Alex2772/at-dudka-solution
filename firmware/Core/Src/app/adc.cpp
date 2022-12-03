@@ -49,6 +49,7 @@ namespace {
         float batteryVoltage = 0.f;
         float current = 0.f;
         float coilResistance = 0.f;
+        int batteryLevel;
     } gProcessedData;
 
 
