@@ -76,8 +76,15 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
+  .user_data 0x08004000:
+  {
+    . = ALIGN(4);
+     KEEP(*(.user_data))
+    . = ALIGN(4);
+  }
+
   /* The program code and other data goes into FLASH */
-  .text :
+  .text 0x08008000:
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
@@ -185,12 +192,6 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 
-  .user_data 0x08040000:
-  {
-    . = ALIGN(4);
-     KEEP(*(.user_data))
-    . = ALIGN(4);
-  }
 }
 
 

@@ -75,3 +75,13 @@ Building $${BIN_FILE}")
 
 target_include_directories(${PROJECT_NAME}.elf PUBLIC 3rdparty)
 target_include_directories(${PROJECT_NAME}.elf PUBLIC Core/Src)
+
+include(image2cpp.cmake)
+
+image2cpp(${PROJECT_NAME}.elf Images/logo.png)
+image2cpp(${PROJECT_NAME}.elf Images/logo_small.png)
+image2cpp(${PROJECT_NAME}.elf Images/no_coil.png)
+image2cpp(${PROJECT_NAME}.elf Images/warning.png)
+image2cpp(${PROJECT_NAME}.elf Images/lock.png)
+image2cpp(${PROJECT_NAME}.elf Images/poweroff.png)
+image2cpp(${PROJECT_NAME}.elf Images/charging.png)

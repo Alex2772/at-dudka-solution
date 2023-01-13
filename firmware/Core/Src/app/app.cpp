@@ -190,7 +190,7 @@ extern "C" void app_run() {
 
 
 bool app::fireButtonPressed() {
-    return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15);
+    return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 }
 
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -202,7 +202,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         app::globals.currentResistance = adc::coilResistance();
 
         auto instantTemperature = app::globals.currentResistance ? glm::clamp(int(util::tcr(0.000915, config::DEFAULT_TEMPERATURE, app::globals.initialResistance.value_or(0), *app::globals.currentResistance)), config::DEFAULT_TEMPERATURE, app::globals.maxTemperature + 400) : config::DEFAULT_TEMPERATURE;
-        app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 1.1f : 0.0001);
+        app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 0.1f : 0.1);
         app::globals.smoothCurrent = glm::mix(app::globals.smoothCurrent, instantCurrent, 0.02f);
         app::globals.smoothBatteryVoltage = glm::mix(app::globals.smoothBatteryVoltage, adc::batteryVoltage(), 0.01f);
 
@@ -212,6 +212,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 app::resetAutoShutdownTimer();
                 app::fireMosfet() = app::globals.currentTemperature + 20 < app::globals.maxTemperature ? 10000 : 0;
                 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+
             } else {
                 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
                 static unsigned frameIndex = 0;
@@ -221,16 +222,19 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
                 if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
                     static bool coilDisconnectedFlag = false;
-                    if (!coilDisconnectedFlag) {
-                        coilDisconnectedFlag = true;
-                        app::runOnUiThread([] {
-                            app::globals.fireAllowed = false;
-                            auto dialog = std::make_unique<ScreenMessageDialog>("Отвал койла", [] {
-                                app::shutdown();
+
+                    if constexpr (!config::CALIBRATION) {
+                        if (!coilDisconnectedFlag) {
+                            coilDisconnectedFlag = true;
+                            app::runOnUiThread([] {
+                                app::globals.fireAllowed = false;
+                                auto dialog = std::make_unique<ScreenMessageDialog>("Отвал койла", [] {
+                                    app::shutdown();
+                                });
+                                dialog->setIcon(image2cpp_warning_png);
+                                app::showScreen(std::move(dialog));
                             });
-                            dialog->setIcon(image2cpp_warning_png);
-                            app::showScreen(std::move(dialog));
-                        });
+                        }
                     }
                 }
             }

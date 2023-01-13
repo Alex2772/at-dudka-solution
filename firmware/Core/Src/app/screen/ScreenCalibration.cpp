@@ -32,4 +32,23 @@ void ScreenCalibration::render(FramebufferImpl& fb) {
     row(16, std::string(util::format("%d", adc::calibrationData().coilVoltage)), std::string(util::format("%0.2fV", adc::coilVoltage())));
     row(24, std::string(util::format("%.3f", adc::batteryVoltage() - adc::shuntVoltage())), std::string(util::format("%.2fA", app::globals.smoothCurrent)));
     row(32, std::string(util::format("%.3f", adc::shuntVoltage() - adc::coilVoltage())), std::string(util::format("%.2fOhm", adc::coilResistance().value_or(0.f))));
+
+    char c = 0;
+    if (input::isKeyDown(input::Key::LEFT)) {
+        c = '<';
+    }
+    if (input::isKeyDown(input::Key::RIGHT)) {
+        c = '>';
+    }
+    if (input::isKeyDown(input::Key::UP)) {
+        c = '^';
+    }
+    if (input::isKeyDown(input::Key::DOWN)) {
+        c = 'v';
+    }
+    if (input::isKeyDown(input::Key::OK)) {
+        c = 'o';
+    }
+
+    row(40, "butt", std::string(util::format("%c", c)));
 }

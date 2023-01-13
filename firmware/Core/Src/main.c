@@ -435,29 +435,29 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pin : CHARGING_Pin */
   GPIO_InitStruct.Pin = CHARGING_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(CHARGING_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : JOY0_Pin JOY1_Pin JOY2_Pin JOY3_Pin */
-  GPIO_InitStruct.Pin = JOY0_Pin|JOY1_Pin|JOY2_Pin|JOY3_Pin;
+  /*Configure GPIO pins : JOY_UP_Pin JOY_RIGHT_Pin JOY_DOWN_Pin JOY_OK_Pin */
+  GPIO_InitStruct.Pin = JOY_UP_Pin|JOY_RIGHT_Pin|JOY_DOWN_Pin|JOY_OK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : JOY4_Pin */
-  GPIO_InitStruct.Pin = JOY4_Pin;
+  /*Configure GPIO pin : JOY_LEFT_Pin */
+  GPIO_InitStruct.Pin = JOY_LEFT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(JOY4_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : FIRE_BUTTON_Pin */
-  GPIO_InitStruct.Pin = FIRE_BUTTON_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(FIRE_BUTTON_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(JOY_LEFT_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : EN_5V_Pin */
   GPIO_InitStruct.Pin = EN_5V_Pin;

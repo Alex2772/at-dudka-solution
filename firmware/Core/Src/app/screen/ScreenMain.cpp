@@ -91,5 +91,5 @@ void ScreenMain::handleKeyTemperature(input::Key key) const {
             app::globals.maxTemperature -= 5;
             break;
     }
-    app::globals.maxTemperature = glm::clamp(app::globals.maxTemperature, 50, 400);
+    app::globals.maxTemperature = glm::clamp(app::globals.maxTemperature, 50, 900);
 }

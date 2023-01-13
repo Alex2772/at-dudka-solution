@@ -110,7 +110,7 @@ float adc::current() {
 }
 
 std::optional<float> adc::coilResistance() {
-    if (gProcessedData.coilResistance < 10.f && isAdcDataReady()) { // inf check
+    if (gProcessedData.coilResistance < 2.f && isAdcDataReady()) { // inf check
         return gProcessedData.coilResistance;
     }
     return std::nullopt;
