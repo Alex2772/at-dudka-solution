@@ -22,6 +22,8 @@
 
 class ScreenCalibration: public IScreen {
 public:
+    ScreenCalibration();
+
     void render(FramebufferImpl& fb) override;
 };
 

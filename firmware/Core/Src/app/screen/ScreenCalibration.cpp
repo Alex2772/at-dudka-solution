@@ -21,6 +21,10 @@
 #include "app/adc.h"
 #include "app/app.h"
 
+ScreenCalibration::ScreenCalibration() {
+    adc::setShutter(config::SHUTTER_DEFAULT);
+}
+
 void ScreenCalibration::render(FramebufferImpl& fb) {
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y}, Color::WHITE, title, FONT_FACE_BITOCRA_4X7);

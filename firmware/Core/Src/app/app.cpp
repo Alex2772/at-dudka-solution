@@ -98,6 +98,7 @@ extern "C" void app_run() {
                     auto lockScreenAppearedTime = HAL_GetTick();
                     while (!input::isKeyDown(input::Key::OK) && waitStartTime + time.count() > HAL_GetTick()) {
                         HAL_Delay(1);
+                        gUiThreadQueue.process(); // process input antidithering frames
 
                         if (isLockScreenVisible) {
                             if (HAL_GetTick() - lockScreenAppearedTime > 3'000) {
@@ -119,6 +120,7 @@ extern "C" void app_run() {
                             }
                         }
                     }
+
                     return !input::isKeyDown(input::Key::OK);
                 };
 
@@ -135,17 +137,26 @@ extern "C" void app_run() {
         fb.image({32, 64}, image2cpp_logo_png);
         display.push(fb);
 
-        app::fireMosfet() = 10000;
+        // several attempts  to measure the initial coil resistance; we have not found another solution to stabilize the measures between reboots
 
-        auto coilCheckTick = HAL_GetTick();
+        for (int i = 0; i < 3; ++i) {
+            app::fireMosfet() = 10000;
 
-        while (!(app::globals.initialResistance = adc::coilResistance())) {
-            if (HAL_GetTick() - coilCheckTick > 1000) {
-                break;
+            auto coilCheckTick = HAL_GetTick();
+
+            decltype(adc::coilResistance()) attempt;
+            while (!(attempt = adc::coilResistance())) {
+                if (HAL_GetTick() - coilCheckTick > 1000) {
+                    break;
+                }
             }
-        }
 
-        app::fireMosfet() = 0;
+            app::fireMosfet() = 0;
+            if (attempt) {
+                app::globals.initialResistance = std::min(app::globals.initialResistance.value_or(2.f), *attempt);
+            }
+            HAL_Delay(100);
+        }
 
         HAL_TIM_Base_Start_IT(&htim4);
         if (!app::globals.initialResistance) {
@@ -202,16 +213,25 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         app::globals.currentResistance = adc::coilResistance();
 
         auto instantTemperature = app::globals.currentResistance ? glm::clamp(int(util::tcr(0.000915, config::DEFAULT_TEMPERATURE, app::globals.initialResistance.value_or(0), *app::globals.currentResistance)), config::DEFAULT_TEMPERATURE, app::globals.maxTemperature + 400) : config::DEFAULT_TEMPERATURE;
-        app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 0.1f : 0.1);
-        app::globals.smoothCurrent = glm::mix(app::globals.smoothCurrent, instantCurrent, 0.02f);
-        app::globals.smoothBatteryVoltage = glm::mix(app::globals.smoothBatteryVoltage, adc::batteryVoltage(), 0.01f);
+        app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 0.05f : 0.1f);
+        app::globals.smoothCurrent = glm::mix(app::globals.smoothCurrent, instantCurrent, 0.2f);
+        app::globals.smoothBatteryVoltage = glm::mix(app::globals.smoothBatteryVoltage, adc::batteryVoltage(), 0.1f);
 
 
         if (app::globals.fireAllowed) {
             if (isFiring) {
                 app::resetAutoShutdownTimer();
-                app::fireMosfet() = app::globals.currentTemperature + 20 < app::globals.maxTemperature ? 10000 : 0;
-                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+
+                if constexpr (config::CALIBRATION) {
+
+                    app::fireMosfet() = 10000;
+                    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                } else {
+                    bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature;
+
+                    app::fireMosfet() = doTheFiringOnThisFrame ? 10000 : 0;
+                    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                }
 
             } else {
                 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);

@@ -41,18 +41,18 @@ namespace config {
             glm::vec2 voltmeter;
         };
 
-        static constexpr CalibrationCurve BATTERY_VOLTAGE({2190.f, 2390.f},
-                                                          {3.55f, 3.8f});
+        static constexpr CalibrationCurve BATTERY_VOLTAGE({ 2902.f, 3193.f},
+                                                          { 3.69f, 4.03f});
 
-        static constexpr CalibrationCurve SHUNT_VOLTAGE({2190.f, 2395.f},
-                                                  {3.549f, 3.818f});
+        static constexpr CalibrationCurve SHUNT_VOLTAGE({2904.f, 3191.f},
+                                                  {3.69f, 4.03f});
 
 
-        static constexpr CalibrationCurve COIL_VOLTAGE({64.f, 2396.f},
-                                                       {0.21f, 3.76f});
+        static constexpr CalibrationCurve COIL_VOLTAGE({2903.f, 3191.f},
+                                                       {3.69f, 4.03f});
 
-        static constexpr CalibrationCurve SHUNT_CURRENT({0.059f, 0.238f},
-                                                        {1.14f, 13.5f});
+        static constexpr CalibrationCurve SHUNT_CURRENT({0.09f, 0.328f},
+                                                        {0.f, 12.71f});
 
     }
 
@@ -61,7 +61,7 @@ namespace config {
      * @brief Time of adc measuring. The higher SHUTTER the higher accuracy.
      */
     static constexpr auto SHUTTER_BOOT = 100;
-    static constexpr auto SHUTTER_DEFAULT = 4;
+    static constexpr auto SHUTTER_DEFAULT = 1;
 
     static constexpr auto DEFAULT_TEMPERATURE = 30;
 

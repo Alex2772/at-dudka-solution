@@ -32,10 +32,6 @@ input::Key gLastKey = input::Key::NONE;
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if ((gLastSignalTime - HAL_GetTick()) < 2) {
-        // filter dithering
-        return;
-    }
     gLastKeyRepeatTime = gLastSignalTime = HAL_GetTick();
 
     input::Key k;
@@ -66,14 +62,17 @@ extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
             return;
     }
 
-    gKeys[int(k)] = !state;
-    gLastKey = k;
+    state = !state;
 
     app::runOnUiThread([=] {
-        if (!state) {
-            app::onKeyDown(k);
-        } else {
-            app::onKeyUp(k);
+        if (gKeys[int(k)] != state) {
+            gKeys[int(k)] = state;
+            gLastKey = k;
+            if (state) {
+                app::onKeyDown(k);
+            } else {
+                app::onKeyUp(k);
+            }
         }
     });
 

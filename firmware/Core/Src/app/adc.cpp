@@ -74,7 +74,7 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     auto& processed = reinterpret_cast<fvec&>(gAdc);
     auto& unprocessed = reinterpret_cast<ivec&>(gAdcRaw);
 
-    processed += (fvec(unprocessed) - processed) / float(gShutter);
+    processed += (fvec(unprocessed) - processed) * 0.1f;
 
     if (app::fireMosfet() > 0) {
         gAdcFiringTick += 1;
