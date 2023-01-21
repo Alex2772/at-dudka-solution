@@ -155,7 +155,12 @@ extern "C" void app_run() {
             if (attempt) {
                 app::globals.initialResistance = std::min(app::globals.initialResistance.value_or(2.f), *attempt);
             }
-            HAL_Delay(100);
+            HAL_Delay(300);
+        }
+
+        // reduce the initial resistance to decrease minimal temperature control power
+        if (app::globals.initialResistance) {
+            *app::globals.initialResistance *= 0.8f;
         }
 
         HAL_TIM_Base_Start_IT(&htim4);
@@ -240,7 +245,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 frameIndex += 1;
                 frameIndex %= 500;
 
-                if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
+                if (adc::coilVoltage() < 0.5f && adc::current() < 0.1f) {
                     static bool coilDisconnectedFlag = false;
 
                     if constexpr (!config::CALIBRATION) {
