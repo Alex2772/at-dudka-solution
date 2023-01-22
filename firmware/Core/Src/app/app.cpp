@@ -245,6 +245,17 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 frameIndex += 1;
                 frameIndex %= 500;
 
+                if (static bool batteryDischargeAlreadyNotified = false; !batteryDischargeAlreadyNotified) {
+                    if (app::globals.smoothBatteryVoltage < 3.5f && !app::isCharging()) {
+                        batteryDischargeAlreadyNotified = true;
+                        app::runOnUiThread([] {
+                            auto dialog = std::make_unique<ScreenMessageDialog>("Аккум разряжен", [] {});
+                            dialog->setIcon(image2cpp_warning_png);
+                            app::showScreen(std::move(dialog));
+                        });
+                    }
+                }
+
                 if (adc::coilVoltage() < 0.5f && adc::current() < 0.1f) {
                     static bool coilDisconnectedFlag = false;
 
