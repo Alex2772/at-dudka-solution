@@ -246,7 +246,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 frameIndex %= 500;
 
                 if (static bool batteryDischargeAlreadyNotified = false; !batteryDischargeAlreadyNotified) {
-                    if (app::globals.smoothBatteryVoltage < 3.5f && !app::isCharging()) {
+                    if (app::globals.smoothBatteryVoltage < 3.3f && !app::isCharging()) {
                         batteryDischargeAlreadyNotified = true;
                         app::runOnUiThread([] {
                             auto dialog = std::make_unique<ScreenMessageDialog>("Аккум разряжен", [] {});
