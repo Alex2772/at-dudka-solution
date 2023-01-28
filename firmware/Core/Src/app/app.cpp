@@ -180,6 +180,18 @@ extern "C" void app_run() {
 
     app::globals.smoothBatteryVoltage = adc::batteryVoltage();
 
+
+    if (app::globals.initialResistance) {
+        if (*app::globals.initialResistance < 0.03f) {
+            app::globals.fireAllowed = false;
+            auto dialog = std::make_unique<ScreenMessageDialog>("КЗ койла", [] {
+                app::shutdown();
+            });
+            dialog->setIcon(image2cpp_warning_png);
+            app::showScreen(std::move(dialog));
+        }
+    }
+
     for (;;) {
         gUiThreadQueue.process();
         input::frame();
@@ -246,7 +258,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 frameIndex %= 500;
 
                 if (static bool batteryDischargeAlreadyNotified = false; !batteryDischargeAlreadyNotified) {
-                    if (app::globals.smoothBatteryVoltage < 3.3f && !app::isCharging()) {
+                    if (app::globals.smoothBatteryVoltage < 3.4f && !app::isCharging()) {
                         batteryDischargeAlreadyNotified = true;
                         app::runOnUiThread([] {
                             auto dialog = std::make_unique<ScreenMessageDialog>("Аккум разряжен", [] {});
@@ -256,7 +268,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     }
                 }
 
-                if (adc::coilVoltage() < 0.5f && adc::current() < 0.1f) {
+                if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
                     static bool coilDisconnectedFlag = false;
 
                     if constexpr (!config::CALIBRATION) {
