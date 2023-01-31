@@ -63,6 +63,11 @@ namespace config {
     static constexpr auto SHUTTER_BOOT = 100;
     static constexpr auto SHUTTER_DEFAULT = 1;
 
+    /**
+     * @brief The current which is considered as short circuit
+     */
+    static constexpr auto MAX_CURRENT = 20;
+
     static constexpr auto DEFAULT_TEMPERATURE = 30;
 
     using namespace std::chrono_literals;

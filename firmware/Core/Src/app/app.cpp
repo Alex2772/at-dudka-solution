@@ -236,6 +236,23 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 
         if (app::globals.fireAllowed) {
+            if (app::globals.smoothCurrent >= config::MAX_CURRENT) {
+                if constexpr (!config::CALIBRATION) {
+                    app::runOnUiThread([] {
+                        auto dialog = std::make_unique<ScreenMessageDialog>("КЗ койла", [] {
+                            app::shutdown();
+                        });
+                        dialog->setIcon(image2cpp_warning_png);
+                        app::showScreen(std::move(dialog));
+                    });
+
+                    app::fireMosfet() = 0;
+                    app::globals.fireAllowed = false;
+
+                    return;
+                }
+            }
+
             if (isFiring) {
                 app::resetAutoShutdownTimer();
 
