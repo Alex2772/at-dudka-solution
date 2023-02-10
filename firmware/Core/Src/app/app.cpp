@@ -64,11 +64,7 @@ extern "C" void app_run() {
     app::resetAutoShutdownTimer();
 
     Framebuffer fb;
-    fb.setTransform(glm::imat3x3({
-         0, -1,  0,
-         1,  0,  0,
-         0, 63,  1,
-    }));
+    fb.verticalOrientation();
 
     if constexpr(config::CALIBRATION) {
 
@@ -229,11 +225,11 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         app::globals.currentResistance = adc::coilResistance();
 
-        auto instantTemperature = app::globals.currentResistance ? glm::clamp(int(util::tcr(0.000915, config::DEFAULT_TEMPERATURE, app::globals.initialResistance.value_or(0), *app::globals.currentResistance)), config::DEFAULT_TEMPERATURE, app::globals.maxTemperature + 400) : config::DEFAULT_TEMPERATURE;
+        const float TCR = enum_traits<Material>::tcr(sram::ram().material);
+        auto instantTemperature = app::globals.currentResistance ? glm::clamp(int(util::tcr(TCR, config::DEFAULT_TEMPERATURE, app::globals.initialResistance.value_or(0), *app::globals.currentResistance)), config::DEFAULT_TEMPERATURE, app::globals.maxTemperature + 400) : config::DEFAULT_TEMPERATURE;
         app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 0.05f : 0.1f);
         app::globals.smoothCurrent = glm::mix(app::globals.smoothCurrent, instantCurrent, 0.2f);
         app::globals.smoothBatteryVoltage = glm::mix(app::globals.smoothBatteryVoltage, adc::batteryVoltage(), 0.1f);
-
 
         if (app::globals.fireAllowed) {
             if (app::globals.smoothCurrent >= config::MAX_CURRENT) {
@@ -261,7 +257,10 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     app::fireMosfet() = 10000;
                     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
                 } else {
-                    bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature;
+                    const auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
+
+                    bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature
+                                               && power < sram::ram().maxPower;
 
                     app::fireMosfet() = doTheFiringOnThisFrame ? 10000 : 0;
                     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);

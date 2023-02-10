@@ -22,6 +22,7 @@
 #include "app/util.h"
 #include "glm/ext/scalar_constants.hpp"
 #include "app/sram.h"
+#include "ScreenSettings.h"
 
 #include <stm32f4xx.h>
 
@@ -29,6 +30,7 @@ extern const std::uint8_t image2cpp_logo_small_png[];
 extern const std::uint8_t image2cpp_charging_png[];
 
 void ScreenMain::render(FramebufferImpl& fb) {
+    fb.verticalOrientation();
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y + 1}, Color::WHITE, title, FONT_FACE_TERMINUS_6X12_KOI8_R);
         fb.string({60, y}, Color::WHITE, value, FONT_FACE_TERMINUS_BOLD_8X14_ISO8859_1, TextAlign::RIGHT);
@@ -39,12 +41,13 @@ void ScreenMain::render(FramebufferImpl& fb) {
 
     fb.rect({0, 0}, {64, 24}, Color::INVERT);
     {
-        auto w = fb.string({32, 30}, Color::WHITE, "SS316L", FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
+        auto w = fb.string({32, 30}, Color::WHITE, enum_traits<Material>::name(sram::ram().material), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
-    row(116 - 12 * 4, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
+    row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
+    row(116 - 12 * 4, "Мощ", util::format("%0.1fW", app::globals.smoothCurrent * app::globals.smoothBatteryVoltage));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
-    row(116 - 12 * 2, "T", util::format("%d\xb0""C", app::globals.currentTemperature));
+    row(116 - 12 * 2, "T", sram::ram().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
     row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
 
     fb.image({7, 124}, image2cpp_logo_small_png);
@@ -89,6 +92,9 @@ void ScreenMain::handleKeyTemperature(input::Key key) const {
             break;
         case input::Key::DOWN:
             app::globals.maxTemperature -= 5;
+            break;
+        case input::Key::RIGHT:
+            app::showScreen(std::make_unique<ScreenSettings>());
             break;
     }
     app::globals.maxTemperature = glm::clamp(app::globals.maxTemperature, 50, 900);

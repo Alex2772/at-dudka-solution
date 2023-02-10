@@ -101,10 +101,10 @@ void SSD1306::writeCommand(std::uint8_t command) {
         if (s == HAL_OK) {
             return;
         }
-        HAL_Delay(100);
+        HAL_Delay(10);
     }
 
-    assert(("i2c failed", false));
+    HAL_NVIC_SystemReset();
 }
 
 void SSD1306::writeData(const std::uint8_t* data, std::size_t size) {

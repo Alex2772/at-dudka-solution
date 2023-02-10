@@ -19,12 +19,15 @@
 
 
 #include <optional>
+#include "material.h"
 
 namespace sram {
 
     struct Config {
         unsigned maxTemperature = 210;
         bool lock = false;
+        unsigned maxPower = 100;
+        Material material = Material::SS316L;
     };
 
     Config& ram();

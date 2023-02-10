@@ -95,7 +95,7 @@ static std::vector<const font_char_desc_t*> compileString(const font_info_t* inf
 
 int FramebufferImpl::string(glm::ivec2 position, Color color, std::string_view string, font_face_t font, TextAlign align) {
     const auto info = font_builtin_fonts[font];
-    const auto compiledString = compileString(info, string, font == FONT_FACE_TERMINUS_6X12_KOI8_R);
+    const auto compiledString = compileString(info, string, font == FONT_FACE_TERMINUS_6X12_KOI8_R || font == FONT_FACE_TERMINUS_BOLD_8X14_KOI8_R);
 
     if (align != TextAlign::LEFT) {
         const auto stringWidth = std::accumulate(compiledString.begin(), compiledString.end(), 0, [](std::size_t lhs, const font_char_desc_t* rhs) {
@@ -144,7 +144,9 @@ void FramebufferImpl::image(glm::ivec2 position, const std::uint8_t* data) {
             auto byte = data[imgY * imageSize.x + imgX];
             for (unsigned i = 0; i < 8 && byte != 0; ++i, byte >>= 1) {
                 if (byte & 0b1) {
-                    pixel(position + glm::ivec2{imgX, imgY * 8 + i}, Color::WHITE);
+                    const auto y = imgY * 8 + i;
+                    if (y >= imageSize.y) break;
+                    pixel(position + glm::ivec2{imgX, y}, Color::WHITE);
                 }
             }
         }
@@ -194,3 +196,4 @@ void FramebufferImpl::rectBorder(glm::ivec2 position, glm::ivec2 size, Color col
     rect(position + glm::ivec2{0, 1}, {1, size.y - 2}, color);
     rect(position + glm::ivec2{size.x - 1, 1}, {1, size.y - 2}, color);
 }
+

@@ -25,6 +25,7 @@ void ScreenDialog::onKeyLongPressFrame(input::Key key) {
 }
 
 void ScreenDialog::render(FramebufferImpl& fb) {
+    fb.verticalOrientation();
     fb.shade();
 
     constexpr glm::ivec2 SIZE = { 64 - 8, 128 - 24 };

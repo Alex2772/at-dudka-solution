@@ -110,6 +110,18 @@ public:
         return mStorage;
     }
 
+    void verticalOrientation() {
+        setTransform(glm::imat3x3({
+              0, -1,  0,
+              1,  0,  0,
+              0, 63,  1,
+        }));
+    }
+
+    const glm::imat3x3& transform() {
+        return mTransform;
+    }
+
 protected:
     FramebufferImpl(std::uint8_t* storage, glm::ivec2 size): mStorage(storage), mSize(size) {
         clear();

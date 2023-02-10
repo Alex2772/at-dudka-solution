@@ -79,10 +79,17 @@ target_include_directories(${PROJECT_NAME}.elf PUBLIC Core/Src)
 
 include(image2cpp.cmake)
 
-image2cpp(${PROJECT_NAME}.elf Images/logo.png)
-image2cpp(${PROJECT_NAME}.elf Images/logo_small.png)
-image2cpp(${PROJECT_NAME}.elf Images/no_coil.png)
-image2cpp(${PROJECT_NAME}.elf Images/warning.png)
-image2cpp(${PROJECT_NAME}.elf Images/lock.png)
-image2cpp(${PROJECT_NAME}.elf Images/poweroff.png)
-image2cpp(${PROJECT_NAME}.elf Images/charging.png)
+file(GLOB_RECURSE imgs Images/*.png)
+
+foreach(_img ${imgs})
+    image2cpp(${PROJECT_NAME}.elf ${_img})
+endforeach()
+
+find_package(Git)
+execute_process(COMMAND
+        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=7 --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE GIT_SHA1
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE GIT_SHA1="${GIT_SHA1}")
