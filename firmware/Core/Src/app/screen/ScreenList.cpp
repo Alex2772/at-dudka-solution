@@ -75,7 +75,7 @@ void ScreenList::render(FramebufferImpl& fb) {
 void ScreenList::onKeyDown(input::Key key) {
     ScreenLandscape::onKeyDown(key);
 
-    if (key == input::Key::OK) {
+    if (key == input::Key::OK || key == input::Key::UP) {
         if (!mAppearanceAnimation.isPaused()) {
             return;
         }

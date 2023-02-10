@@ -23,11 +23,13 @@
 #include "glm/ext/scalar_constants.hpp"
 #include "app/sram.h"
 #include "ScreenSettings.h"
+#include "ScreenMessageDialog.h"
 
 #include <stm32f4xx.h>
 
 extern const std::uint8_t image2cpp_logo_small_png[];
 extern const std::uint8_t image2cpp_charging_png[];
+extern const std::uint8_t image2cpp_lock_png[];
 
 void ScreenMain::render(FramebufferImpl& fb) {
     fb.verticalOrientation();
@@ -40,10 +42,33 @@ void ScreenMain::render(FramebufferImpl& fb) {
     fb.string({32, 0}, Color::WHITE, util::format("%d\xb0""C", app::globals.maxTemperature), FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1, TextAlign::MIDDLE);
 
     fb.rect({0, 0}, {64, 24}, Color::INVERT);
+
+    if (sram::ram().cooldownEnabled) {
+        fb.rect({0, 21}, {64, 1}, Color::BLACK);
+
+        int w = app::globals.cooldownStreak / sram::ram().cooldownThreshold * 64.f;
+        fb.rect({64 - w, 22}, {w, 2}, Color::BLACK);
+
+        if (static bool once = true; once) {
+            if (app::globals.cooldownStreak >= sram::ram().cooldownThreshold) {
+                once = false;
+                app::globals.fireAllowed = false;
+                auto dialog = std::make_unique<ScreenMessageDialog>("Лимит исчерпан", [] {
+                    app::shutdown();
+                });
+                dialog->setIcon(image2cpp_lock_png);
+                app::showScreen(std::move(dialog));
+            }
+        }
+    }
+
     {
         auto w = fb.string({32, 30}, Color::WHITE, enum_traits<Material>::name(sram::ram().material), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
+
+    fb.string({32, 44},  Color::WHITE, "<Выкл|Меню>", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
     row(116 - 12 * 4, "Мощ", util::format("%0.1fW", app::globals.smoothCurrent * app::globals.smoothBatteryVoltage));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));

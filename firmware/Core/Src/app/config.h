@@ -72,8 +72,6 @@ namespace config {
 
     using namespace std::chrono_literals;
 
-    static constexpr auto AUTOSHUTDOWN_TIMEOUT = 120s;
-
     static constexpr auto INPUT_KEY_REPEAT_DELAY = 200;
 
     static constexpr auto CALIBRATION = false;

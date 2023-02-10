@@ -20,6 +20,7 @@
 
 #include <optional>
 #include "material.h"
+#include "duration_enum.h"
 
 namespace sram {
 
@@ -28,6 +29,10 @@ namespace sram {
         bool lock = false;
         unsigned maxPower = 100;
         Material material = Material::SS316L;
+        SleepDuration sleepTimout = SleepDuration::k3MIN;
+        bool cooldownEnabled = false;
+        CooldownDuration cooldownDuration = CooldownDuration::k1MIN;
+        unsigned cooldownThreshold = 10;
     };
 
     Config& ram();

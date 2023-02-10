@@ -21,6 +21,7 @@
 
 #include "ScreenAbout.h"
 extern const std::uint8_t image2cpp_logo_med_png[];
+extern const std::uint8_t image2cpp_qr_png[];
 
 ScreenAbout::ScreenAbout() {
 
@@ -28,6 +29,8 @@ ScreenAbout::ScreenAbout() {
 
 void ScreenAbout::render(FramebufferImpl& fb) {
     ScreenLandscape::render(fb);
+
+    fb.image({110, 64 - 16}, image2cpp_qr_png);
 
     fb.image({22, 8}, image2cpp_logo_med_png);
     fb.string({40, -2}, Color::WHITE, "Dudka", FONT_FACE_TERMINUS_BOLD_8X14_ISO8859_1);

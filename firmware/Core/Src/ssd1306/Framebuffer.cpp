@@ -112,9 +112,19 @@ int FramebufferImpl::string(glm::ivec2 position, Color color, std::string_view s
         }
     }
 
-    const auto initialPositionX = position.x;
+    auto initialPositionX = position.x;
+    const auto NEWLINE = font_get_char_desc(info, '\n');
 
     for (auto compiledChar : compiledString) {
+        if (compiledChar == NEWLINE) {
+            position.x = initialPositionX;
+            position.y += info->height;
+            continue;
+        }
+
+        if (position.y + info->height < 0) continue;
+        if (position.y > 128) break;
+
         const auto charBitmap = info->bitmap + std::uint32_t(compiledChar->offset);
 
         const std::size_t charWidthInBytes = (compiledChar->width + 7) / 8;
@@ -145,7 +155,6 @@ void FramebufferImpl::image(glm::ivec2 position, const std::uint8_t* data) {
             for (unsigned i = 0; i < 8 && byte != 0; ++i, byte >>= 1) {
                 if (byte & 0b1) {
                     const auto y = imgY * 8 + i;
-                    if (y >= imageSize.y) break;
                     pixel(position + glm::ivec2{imgX, y}, Color::WHITE);
                 }
             }

@@ -205,8 +205,10 @@ extern "C" void app_run() {
 
         display.push(fb);
 
-        if (HAL_GetTick() - app::globals.lastActionTick > std::chrono::duration_cast<std::chrono::milliseconds>(config::AUTOSHUTDOWN_TIMEOUT).count()) {
-            app::shutdown();
+        if (auto autoShutdown = enum_traits<SleepDuration>::duration(sram::ram().sleepTimout); autoShutdown.count() != 0) {
+            if (HAL_GetTick() - app::globals.lastActionTick > autoShutdown.count()) {
+                app::shutdown();
+            }
         }
     }
 
@@ -220,6 +222,7 @@ bool app::fireButtonPressed() {
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim4) {
+        // called 100 times per second
         const bool isFiring = app::globals.fireAllowed && app::fireButtonPressed();
         auto instantCurrent = adc::current();
 
@@ -262,6 +265,10 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature
                                                && power < sram::ram().maxPower;
 
+                    if (sram::ram().cooldownEnabled && doTheFiringOnThisFrame) {
+                        app::globals.cooldownStreak += 0.01f;
+                    }
+
                     app::fireMosfet() = doTheFiringOnThisFrame ? 10000 : 0;
                     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
                 }
@@ -301,6 +308,9 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                         }
                     }
                 }
+            }
+            if (sram::ram().cooldownEnabled && !isFiring) {
+                app::globals.cooldownStreak = glm::ceil(app::globals.cooldownStreak);
             }
         }
 

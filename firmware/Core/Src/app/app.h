@@ -42,6 +42,7 @@ namespace app {
         float smoothBatteryVoltage = 0.f;
         int currentTemperature = config::DEFAULT_TEMPERATURE;
         uint32_t lastActionTick = 0;
+        float cooldownStreak = 0.f;
     };
     extern Globals globals;
 

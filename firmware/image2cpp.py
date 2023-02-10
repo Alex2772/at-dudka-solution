@@ -60,7 +60,7 @@ with open(destination, 'w') as fos:
             for i in range(8):
                 byte >>= 1
                 if y + i >= height:
-                    break
+                    continue
 
                 if pixels[x, y + i] > 128:
                     byte |= 0b1000_0000

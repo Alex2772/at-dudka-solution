@@ -22,6 +22,7 @@
 #include "ScreenSettings.h"
 #include "app/app.h"
 #include "app/util.h"
+#include "ScreenHelp.h"
 #include <app/sram.h>
 #include <app/screen/ScreenAbout.h>
 
@@ -58,8 +59,8 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
             fb.rect(CENTER - SIZE / 2 + glm::ivec2{0, 1 - ARROW_SIZE}, { 1, SIZE.y - 1 + ARROW_SIZE * 2 }, Color::WHITE);
             fb.rect(CENTER - SIZE / 2 * glm::ivec2{-1, 1} + glm::ivec2{-1, 1 - ARROW_SIZE}, { 1, SIZE.y - 1 + ARROW_SIZE * 2 }, Color::WHITE);
 
-            if (value() != max) fb.image(CENTER - glm::ivec2{0, SIZE.y - ARROW_SIZE / 2}, image2cpp_arrow_up_png);
-            if (value() != min) fb.image(CENTER + glm::ivec2{0, SIZE.y - ARROW_SIZE }, image2cpp_arrow_down_png);
+            if (value() != max) fb.image(CENTER - glm::ivec2{0, SIZE.y - ARROW_SIZE / 2 - 3}, image2cpp_arrow_up_png);
+            if (value() != min) fb.image(CENTER + glm::ivec2{0, SIZE.y - ARROW_SIZE + 2}, image2cpp_arrow_down_png);
 
             if (mChangeIndication == 1) {
                 fb.rect(CENTER - SIZE / 2 + glm::ivec2{1, 1 - ARROW_SIZE}, glm::ivec2{SIZE.x - 2, ARROW_SIZE - 1}, Color::INVERT);
@@ -82,19 +83,19 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
         void handleKey(input::Key key) {
             switch (key) {
                 case input::Key::LEFT:
-                    value() += step;
-                    if (value() > max) {
+                    if (value() >= max) {
                         value() = max;
                     } else {
+                        value() += step;
                         mChangeIndication = 1;
                     }
                     break;
 
                 case input::Key::RIGHT:
-                    value() -= step;
-                    if (value() < min) {
+                    if (value() <= min) {
                         value() = min;
                     } else {
+                        value() -= step;
                         mChangeIndication = -1;
                     }
                     break;
@@ -142,15 +143,83 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, T(sram::Config:
         return enum_traits<T>::name(sram::ram().*field);
     });
 }
+template<>
+std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, bool(sram::Config::* field)) {
+    return ScreenList::makeItem(name, [=]() {
+        sram::ram().*field = !(sram::ram().*field);
+    }, [field]() {
+        return sram::ram().*field ? "ON" : "OFF";
+    });
+}
 
+
+struct ScreenSleepSettings: ScreenList {
+public:
+    ScreenSleepSettings(): ScreenList("Сон", {
+        makeSetting("Тайм-аут", &sram::Config::sleepTimout),
+    }) {}
+};
+
+template<typename T, typename... Args>
+auto makeShowScreen(Args&&... args) {
+    return [t = std::make_tuple(std::forward<Args>(args)...)] {
+        app::showScreen(std::apply([](const auto&... args) {
+            return std::make_unique<T>(args...);
+        }, t));
+    };
+}
+
+struct ScreenCooldownSettings: ScreenList {
+public:
+    ScreenCooldownSettings(): ScreenList("КД затяжек", {
+            makeItem("Справка", makeShowScreen<ScreenHelp>("КД затяжек",
+R"(Кулдаун затяжек
+позволяет жеско
+ограничивать
+длительность
+использования
+устройства. По
+достижении указанного
+лимита, вейп
+принудительно
+отключается, а при
+попытке запуска
+выводит ошибку с
+таймером, т.е. вейп
+превращается в
+кирпич. С помощью
+этого режима можно
+избежать состояние
+обкуренности
+(особенно с
+никотинками).
+
+ВНИМАНИЕ! Досрочный
+выход из режима
+"кирпича" не
+предусмотрен!
+Извлечение
+аккумулятора не
+поможет! В это время
+вейп можно будет
+разве что только в
+жопу себе запихать
+(вейперам не
+привыкать).)")),
+        makeSetting("Разреш.блок-вку", &sram::Config::cooldownEnabled),
+        makeSetting("Длит.блок-вки", &sram::Config::cooldownDuration),
+        makeSetting("Кол-во затяжек", "%d", &sram::Config::cooldownThreshold, 1u, 100u, 1u),
+        //makeSetting("Тип блок-вки", ),
+    }) {}
+};
 
 
 ScreenSettings::ScreenSettings(): ScreenList("Настройки", {
     makeSetting("Макс. мощность", "%dW", &sram::Config::maxPower, 4u, 100u, 2u),
     makeSetting("Тип койла", &sram::Config::material),
-    makeItem("Спящий режим", [] {} ),                                           
-    makeItem("Кулдаун затяжек", [] {} ),
-    makeItem("Об устройстве", [] { app::showScreen(std::make_unique<ScreenAbout>()); } ),
+    makeItem("Сон", makeShowScreen<ScreenSleepSettings>()),
+    makeItem("Кулдаун затяжек",  makeShowScreen<ScreenCooldownSettings>()),
+    makeItem("Об устройстве", makeShowScreen<ScreenAbout>()),
 }) {
 
 }
