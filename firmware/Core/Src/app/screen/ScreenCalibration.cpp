@@ -20,6 +20,7 @@
 #include "app/util.h"
 #include "app/adc.h"
 #include "app/app.h"
+#include "app/rtc.h"
 
 ScreenCalibration::ScreenCalibration() {
     adc::setShutter(config::SHUTTER_DEFAULT);
@@ -55,4 +56,5 @@ void ScreenCalibration::render(FramebufferImpl& fb) {
     }
 
     row(40, "butt", std::string(util::format("%c", c)));
+    row(60, "RTC", util::format("%d", int(rtc::now().count())));
 }

@@ -29,10 +29,12 @@ namespace sram {
         bool lock = false;
         unsigned maxPower = 100;
         Material material = Material::SS316L;
-        SleepDuration sleepTimout = SleepDuration::k3MIN;
+        SleepDuration sleepTimout = SleepDuration::k2MIN;
+
         bool cooldownEnabled = false;
         CooldownDuration cooldownDuration = CooldownDuration::k1MIN;
         unsigned cooldownThreshold = 10;
+        std::optional<std::chrono::seconds> cooldownNextUnlock = std::nullopt;
     };
 
     Config& ram();

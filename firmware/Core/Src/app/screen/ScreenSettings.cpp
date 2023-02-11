@@ -172,7 +172,10 @@ auto makeShowScreen(Args&&... args) {
 struct ScreenCooldownSettings: ScreenList {
 public:
     ScreenCooldownSettings(): ScreenList("КД затяжек", {
-            makeItem("Справка", makeShowScreen<ScreenHelp>("КД затяжек",
+        makeSetting("Разреш.блок-вку", &sram::Config::cooldownEnabled),
+        makeSetting("Длит.блок-вки", &sram::Config::cooldownDuration),
+        makeSetting("Кол-во затяжек", "%d", &sram::Config::cooldownThreshold, 1u, 100u, 1u),
+        makeItem("Справка", makeShowScreen<ScreenHelp>("КД затяжек",
 R"(Кулдаун затяжек
 позволяет жеско
 ограничивать
@@ -206,9 +209,6 @@ R"(Кулдаун затяжек
 жопу себе запихать
 (вейперам не
 привыкать).)")),
-        makeSetting("Разреш.блок-вку", &sram::Config::cooldownEnabled),
-        makeSetting("Длит.блок-вки", &sram::Config::cooldownDuration),
-        makeSetting("Кол-во затяжек", "%d", &sram::Config::cooldownThreshold, 1u, 100u, 1u),
         //makeSetting("Тип блок-вки", ),
     }) {}
 };

@@ -23,6 +23,7 @@ enum class SleepDuration {
     kNEVER,
     k30S,
     k1MIN,
+    k2MIN,
     k3MIN,
     k5MIN,
     k10MIN,
@@ -35,6 +36,7 @@ struct enum_traits<SleepDuration> {
             SleepDuration::kNEVER,
             SleepDuration::k30S,
             SleepDuration::k1MIN,
+            SleepDuration::k2MIN,
             SleepDuration::k3MIN,
             SleepDuration::k5MIN,
             SleepDuration::k10MIN,
@@ -45,6 +47,7 @@ struct enum_traits<SleepDuration> {
             case SleepDuration::kNEVER: return "OFF";
             case SleepDuration::k30S: return "30s";
             case SleepDuration::k1MIN: return "1min";
+            case SleepDuration::k2MIN: return "2min";
             case SleepDuration::k3MIN: return "3min";
             case SleepDuration::k5MIN: return "5min";
             case SleepDuration::k10MIN:  return "10min";
@@ -58,6 +61,7 @@ struct enum_traits<SleepDuration> {
             case SleepDuration::kNEVER:  return 0s;
             case SleepDuration::k30S:    return 30s;
             case SleepDuration::k1MIN:   return 1min;
+            case SleepDuration::k2MIN:   return 2min;
             case SleepDuration::k3MIN:   return 3min;
             case SleepDuration::k5MIN:   return 5min;
             case SleepDuration::k10MIN:  return 10min;

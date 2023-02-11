@@ -48,18 +48,6 @@ void ScreenMain::render(FramebufferImpl& fb) {
 
         int w = app::globals.cooldownStreak / sram::ram().cooldownThreshold * 64.f;
         fb.rect({64 - w, 22}, {w, 2}, Color::BLACK);
-
-        if (static bool once = true; once) {
-            if (app::globals.cooldownStreak >= sram::ram().cooldownThreshold) {
-                once = false;
-                app::globals.fireAllowed = false;
-                auto dialog = std::make_unique<ScreenMessageDialog>("Лимит исчерпан", [] {
-                    app::shutdown();
-                });
-                dialog->setIcon(image2cpp_lock_png);
-                app::showScreen(std::move(dialog));
-            }
-        }
     }
 
     {

@@ -26,6 +26,7 @@
 #include "app/screen/ScreenConfirmDialog.h"
 #include "app/screen/ScreenCalibration.h"
 #include "sram.h"
+#include "rtc.h"
 #include <ssd1306/SSD1306.h>
 #include <glm/gtc/constants.hpp>
 #include <vector>
@@ -35,6 +36,8 @@ extern const std::uint8_t image2cpp_no_coil_png[];
 extern const std::uint8_t image2cpp_lock_png[];
 extern const std::uint8_t image2cpp_poweroff_png[];
 extern const std::uint8_t image2cpp_warning_png[];
+extern const std::uint8_t image2cpp_cooldown_png[];
+
 
 using namespace std::chrono;
 using namespace std::chrono_literals;
@@ -76,6 +79,27 @@ extern "C" void app_run() {
 
         app::showScreen(std::make_unique<ScreenCalibration>());
     } else {
+        if (sram::ram().cooldownNextUnlock) {
+            if (rtc::now() < *sram::ram().cooldownNextUnlock) {
+                fb.image({32,  32}, image2cpp_cooldown_png);
+                fb.string({32, 52}, Color::WHITE, "Кулдаун", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+                fb.string({32, 52 + 14}, Color::WHITE, "осталось", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+
+                auto delta = *sram::ram().cooldownNextUnlock - rtc::now();
+
+                fb.string({32, 52 + 14 + 12},
+                          Color::WHITE,
+                          delta < 1min ? "<1м" : util::format("%dч %dм", int(floor<hours>(delta).count()), int(floor<minutes>(delta).count()) % 60),
+                          FONT_FACE_TERMINUS_6X12_KOI8_R,
+                          TextAlign::MIDDLE);
+                display.push(fb);
+                HAL_Delay(3000);
+                app::shutdown();
+            } else {
+                sram::ram().cooldownNextUnlock.reset();
+            }
+        }
+
         if (sram::ram().lock) {
             if (!input::isKeyDown(input::Key::OK)) {
                 auto drawLockScreen = [&] {
@@ -310,6 +334,23 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 }
             }
             if (sram::ram().cooldownEnabled && !isFiring) {
+                if (static bool once = true; once) {
+                    if (app::globals.cooldownStreak >= sram::ram().cooldownThreshold) {
+                        once = false;
+                        app::globals.fireAllowed = false;
+                        app::runOnUiThread([] {
+                            rtc::resetTime();
+                            sram::ram().cooldownNextUnlock = std::chrono::duration_cast<std::chrono::seconds>(enum_traits<CooldownDuration>::duration(sram::ram().cooldownDuration));
+                            sram::save();
+
+                            auto dialog = std::make_unique<ScreenMessageDialog>("Лимит исчерпан", [] {
+                                app::shutdown();
+                            });
+                            dialog->setIcon(image2cpp_cooldown_png);
+                            app::showScreen(std::move(dialog));
+                        });
+                    }
+                }
                 app::globals.cooldownStreak = glm::ceil(app::globals.cooldownStreak);
             }
         }
@@ -398,3 +439,4 @@ int app::batteryLevel() {
 bool app::isCharging() {
     return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 }
+
