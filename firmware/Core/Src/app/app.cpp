@@ -84,13 +84,13 @@ extern "C" void app_run() {
 
         app::showScreen(std::make_unique<ScreenCalibration>());
     } else {
-        if (sram::ram().cooldownNextUnlock) {
-            if (rtc::now() < *sram::ram().cooldownNextUnlock) {
+        if (sram::config().cooldownNextUnlock) {
+            if (rtc::now() < *sram::config().cooldownNextUnlock) {
                 fb.image({32,  32}, image2cpp_cooldown_png);
                 fb.string({32, 52}, Color::WHITE, "Кулдаун", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
                 fb.string({32, 52 + 14}, Color::WHITE, "осталось", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
 
-                auto delta = *sram::ram().cooldownNextUnlock - rtc::now();
+                auto delta = *sram::config().cooldownNextUnlock - rtc::now();
 
                 fb.string({32, 52 + 14 + 12},
                           Color::WHITE,
@@ -101,11 +101,11 @@ extern "C" void app_run() {
                 HAL_Delay(3000);
                 app::shutdown();
             } else {
-                sram::ram().cooldownNextUnlock.reset();
+                sram::config().cooldownNextUnlock.reset();
             }
         }
 
-        if (sram::ram().lock) {
+        if (sram::config().lock) {
             if (!input::isKeyDown(input::Key::OK)) {
                 auto drawLockScreen = [&] {
                     fb.image({32,  32}, image2cpp_lock_png);
@@ -155,7 +155,7 @@ extern "C" void app_run() {
 
             }
 
-            sram::ram().lock = false;
+            sram::config().lock = false;
             fb.clear();
         }
 
@@ -198,7 +198,7 @@ extern "C" void app_run() {
             app::shutdown();
         }
 
-        app::globals.maxTemperature = sram::ram().maxTemperature;
+        app::globals.maxTemperature = sram::config().maxTemperature;
 
         app::showScreen(std::make_unique<ScreenMain>());
     }
@@ -232,7 +232,7 @@ extern "C" void app_run() {
 
         display.push(fb);
 
-        if (auto autoShutdown = enum_traits<SleepDuration>::duration(sram::ram().sleepTimout); autoShutdown.count() != 0) {
+        if (auto autoShutdown = enum_traits<SleepDuration>::duration(sram::config().sleepTimout); autoShutdown.count() != 0) {
             if (HAL_GetTick() - app::globals.lastActionTick > autoShutdown.count()) {
                 app::shutdown();
             }
@@ -254,7 +254,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         app::globals.currentResistance = adc::coilResistance();
 
-        const float TCR = enum_traits<Material>::tcr(sram::ram().material);
+        const float TCR = enum_traits<Material>::tcr(sram::config().material);
         auto instantTemperature = app::globals.currentResistance ? glm::clamp(int(util::tcr(TCR, config::DEFAULT_TEMPERATURE, app::globals.initialResistance.value_or(0), *app::globals.currentResistance)), config::DEFAULT_TEMPERATURE, app::globals.maxTemperature + 400) : config::DEFAULT_TEMPERATURE;
         app::globals.currentTemperature = glm::mix(app::globals.currentTemperature, instantTemperature, app::fireMosfet() > 0 ? 0.05f : 0.1f);
         app::globals.smoothCurrent = glm::mix(app::globals.smoothCurrent, instantCurrent, 0.2f);
@@ -287,9 +287,9 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     const auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
 
                     bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature
-                                               && power < sram::ram().maxPower;
+                                               && power < sram::config().maxPower;
 
-                    if (sram::ram().cooldownEnabled && doTheFiringOnThisFrame) {
+                    if (sram::config().cooldownEnabled && doTheFiringOnThisFrame) {
                         app::globals.cooldownStreak += 0.01f;
                     }
 
@@ -331,14 +331,15 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     }
                 }
             }
-            if (sram::ram().cooldownEnabled && !isFiring) {
+            if (sram::config().cooldownEnabled && !isFiring) {
                 if (static bool once = true; once) {
-                    if (app::globals.cooldownStreak >= sram::ram().cooldownThreshold) {
+                    if (app::globals.cooldownStreak >= sram::config().cooldownThreshold) {
                         once = false;
                         app::globals.fireAllowed = false;
                         app::runOnUiThread([] {
                             rtc::resetTime();
-                            sram::ram().cooldownNextUnlock = std::chrono::duration_cast<std::chrono::seconds>(enum_traits<CooldownDuration>::duration(sram::ram().cooldownDuration));
+                            sram::config().cooldownNextUnlock = std::chrono::duration_cast<std::chrono::seconds>(enum_traits<CooldownDuration>::duration(
+                                    sram::config().cooldownDuration));
                             sram::save();
 
                             auto dialog = ScreenMessageDialog::make("Лимит исчерпан", { makeShutdownAction() });
@@ -380,7 +381,7 @@ void app::onKeyDown(input::Key key) {
 
     if (gScreens.size() <= 1 && key == input::Key::LEFT) {
         auto dialog = std::make_unique<ScreenConfirmDialog>("Заблокировать?", [] {
-            sram::ram().lock = true;
+            sram::config().lock = true;
             app::shutdown();
         });
         dialog->setIcon(image2cpp_poweroff_png);

@@ -68,12 +68,12 @@ ConfigWithCrc& ramConfigWithCrc() {
     return configWithCrc;
 }
 
-sram::Config& sram::ram() {
+sram::Config& sram::config() {
     return ramConfigWithCrc().config;
 }
 
 void sram::save() {
-    if (ram() == flashConfig().config) {
+    if (config() == flashConfig().config) {
         return;
     }
 
@@ -84,7 +84,7 @@ void sram::save() {
 
     FLASH_Erase_Sector(1, FLASH_VOLTAGE_RANGE_3);
 
-    ramConfigWithCrc().crc = computeCrc(ram());
+    ramConfigWithCrc().crc = computeCrc(config());
 
     auto sourceBegin = reinterpret_cast<std::uint32_t*>(&ramConfigWithCrc());
     auto sourceEnd = sourceBegin + (sizeof(ramConfigWithCrc())) / sizeof(std::uint32_t);

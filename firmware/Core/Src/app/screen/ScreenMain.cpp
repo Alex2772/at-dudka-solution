@@ -43,15 +43,15 @@ void ScreenMain::render(FramebufferImpl& fb) {
 
     fb.rect({0, 0}, {64, 24}, Color::INVERT);
 
-    if (sram::ram().cooldownEnabled) {
+    if (sram::config().cooldownEnabled) {
         fb.rect({0, 21}, {64, 1}, Color::BLACK);
 
-        int w = app::globals.cooldownStreak / sram::ram().cooldownThreshold * 64.f;
+        int w = app::globals.cooldownStreak / sram::config().cooldownThreshold * 64.f;
         fb.rect({64 - w, 22}, {w, 2}, Color::BLACK);
     }
 
     {
-        auto w = fb.string({32, 30}, Color::WHITE, enum_traits<Material>::name(sram::ram().material), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
+        auto w = fb.string({32, 30}, Color::WHITE, enum_traits<Material>::name(sram::config().material), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
 
@@ -59,10 +59,10 @@ void ScreenMain::render(FramebufferImpl& fb) {
 
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
     auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
-    power = glm::min(power, float(sram::ram().maxPower));
+    power = glm::min(power, float(sram::config().maxPower));
     row(116 - 12 * 4, "Мощ", util::format("%0.1fW", power));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
-    row(116 - 12 * 2, "T", sram::ram().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
+    row(116 - 12 * 2, "T", sram::config().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
     row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
 
     fb.image({7, 124}, image2cpp_logo_small_png);
@@ -97,7 +97,7 @@ void ScreenMain::onKeyLongPressFrame(input::Key key) {
 void ScreenMain::onKeyUp(input::Key key) {
     IScreen::onKeyUp(key);
 
-    sram::ram().maxTemperature = app::globals.maxTemperature;
+    sram::config().maxTemperature = app::globals.maxTemperature;
 }
 
 void ScreenMain::handleKeyTemperature(input::Key key) const {

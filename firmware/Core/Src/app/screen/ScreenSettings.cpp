@@ -38,7 +38,7 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
                                                                                               step(step), field(field) {}
 
         T& value() {
-            return sram::ram().*field;
+            return sram::config().*field;
         }
 
         void render(FramebufferImpl& fb) override {
@@ -112,7 +112,7 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
     return ScreenList::makeItem(name, [=]() {
         app::showScreen(std::make_unique<ScreenSetting>(name, fmt, min, max, step, field));
     }, [fmt, field]() {
-        return util::format(fmt, sram::ram().*field).data();
+        return util::format(fmt, sram::config().*field).data();
     });
 }
 
@@ -126,13 +126,14 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, T(sram::Config:
             l.reserve(std::size(enum_traits<T>::values));
             for (auto v : enum_traits<T>::values) {
                 l.push_back(makeItem(enum_traits<T>::name(v), [this, field, v]() {
-                    sram::ram().*field = v;
+                    sram::config().*field = v;
                     closeAnimated();
                 }, [] { return ""; }));
             }
             return l;
         }()) {
-            const auto index = std::find(std::begin(enum_traits<T>::values), std::end(enum_traits<T>::values), sram::ram().*field) - std::begin(enum_traits<T>::values);
+            const auto index = std::find(std::begin(enum_traits<T>::values), std::end(enum_traits<T>::values),
+                                         sram::config().*field) - std::begin(enum_traits<T>::values);
             setSelectedItem(index);
         }
     };
@@ -140,15 +141,15 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, T(sram::Config:
     return ScreenList::makeItem(name, [=]() {
         app::showScreen(std::make_unique<ScreenSetting>(name, field));
     }, [field]() {
-        return enum_traits<T>::name(sram::ram().*field);
+        return enum_traits<T>::name(sram::config().*field);
     });
 }
 template<>
 std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, bool(sram::Config::* field)) {
     return ScreenList::makeItem(name, [=]() {
-        sram::ram().*field = !(sram::ram().*field);
+        sram::config().*field = !(sram::config().*field);
     }, [field]() {
-        return sram::ram().*field ? "ON" : "OFF";
+        return sram::config().*field ? "ON" : "OFF";
     });
 }
 
