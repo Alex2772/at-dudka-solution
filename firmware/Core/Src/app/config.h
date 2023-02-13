@@ -22,6 +22,8 @@
 #include <chrono>
 
 namespace config {
+    using namespace std::chrono_literals;
+
     namespace calibrated {
         /**
          * @brief Calibration based on 2 reference measures.
@@ -70,11 +72,12 @@ namespace config {
 
     static constexpr auto DEFAULT_TEMPERATURE = 30;
 
-    using namespace std::chrono_literals;
-
     static constexpr auto INPUT_KEY_REPEAT_DELAY = 200;
 
     static constexpr auto CALIBRATION = false;
+
+    static constexpr auto BATTERY_LEVEL_WARNING = 3.4f;
+    static constexpr auto BATTERY_LEVEL_CRITICAL = 3.f;
 
     namespace pin {
         struct Pin {

@@ -20,11 +20,13 @@
 
 #include "IScreen.h"
 
-class ScreenCalibration: public IScreen {
+class ScreenDebug: public IScreen {
 public:
-    ScreenCalibration();
+    ScreenDebug();
 
     void render(FramebufferImpl& fb) override;
+
+    void onKeyDown(input::Key key) override;
 };
 
 

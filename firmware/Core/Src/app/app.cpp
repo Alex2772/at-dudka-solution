@@ -24,7 +24,7 @@
 #include "FunctionQueue.h"
 #include "app/screen/ScreenMain.h"
 #include "app/screen/ScreenConfirmDialog.h"
-#include "app/screen/ScreenCalibration.h"
+#include "app/screen/ScreenDebug.h"
 #include "sram.h"
 #include "rtc.h"
 #include <ssd1306/SSD1306.h>
@@ -82,7 +82,7 @@ extern "C" void app_run() {
 
         HAL_TIM_Base_Start_IT(&htim4);
 
-        app::showScreen(std::make_unique<ScreenCalibration>());
+        app::showScreen(std::make_unique<ScreenDebug>());
     } else {
         if (sram::config().cooldownNextUnlock) {
             if (rtc::now() < *sram::config().cooldownNextUnlock) {
@@ -207,7 +207,7 @@ extern "C" void app_run() {
 
 
     if (app::globals.initialResistance) {
-        if (*app::globals.initialResistance < 0.03f) {
+        if (*app::globals.initialResistance < 0.03f && !sram::config().mechModMode) {
             app::globals.fireAllowed = false;
             auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
             dialog->setIcon(image2cpp_warning_png);
@@ -266,7 +266,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         app::globals.smoothBatteryVoltage = glm::mix(app::globals.smoothBatteryVoltage, adc::batteryVoltage(), 0.1f);
 
         if (app::globals.fireAllowed) {
-            if (app::globals.smoothCurrent >= config::MAX_CURRENT) {
+            if (app::globals.smoothCurrent >= config::MAX_CURRENT && !sram::config().mechModMode) {
                 if constexpr (!config::CALIBRATION) {
                     app::runOnUiThread([] {
                         auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
@@ -284,7 +284,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (isFiring) {
                 app::resetAutoShutdownTimer();
 
-                if constexpr (config::CALIBRATION) {
+                if (config::CALIBRATION || sram::config().mechModMode) {
 
                     app::fireMosfet() = 10000;
                     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
@@ -309,11 +309,22 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 frameIndex += 1;
                 frameIndex %= 500;
 
-                if (static bool batteryDischargeAlreadyNotified = false; !batteryDischargeAlreadyNotified) {
-                    if (app::globals.smoothBatteryVoltage < 3.4f && !app::isCharging()) {
-                        batteryDischargeAlreadyNotified = true;
+                if (static bool triggered = false; !triggered && !sram::config().mechModMode) {
+                    if (app::globals.smoothBatteryVoltage < config::BATTERY_LEVEL_WARNING && !app::isCharging()) {
+                        triggered = true;
                         app::runOnUiThread([] {
                             auto dialog = ScreenMessageDialog::make("Аккум разряжен");
+                            dialog->setIcon(image2cpp_warning_png);
+                            app::showScreen(std::move(dialog));
+                        });
+                    }
+                }
+
+                if (static bool triggered = false; !triggered && !sram::config().mechModMode) {
+                    if (app::globals.smoothBatteryVoltage < config::BATTERY_LEVEL_CRITICAL && !app::isCharging()) {
+                        triggered = true;
+                        app::runOnUiThread([] {
+                            auto dialog = ScreenMessageDialog::make("Аккум разряжен в хлам", { makeShutdownAction() });
                             dialog->setIcon(image2cpp_warning_png);
                             app::showScreen(std::move(dialog));
                         });
@@ -324,7 +335,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     static bool coilDisconnectedFlag = false;
 
                     if constexpr (!config::CALIBRATION) {
-                        if (!coilDisconnectedFlag) {
+                        if (!coilDisconnectedFlag && !sram::config().mechModMode) {
                             coilDisconnectedFlag = true;
                             app::runOnUiThread([] {
                                 app::globals.fireAllowed = false;

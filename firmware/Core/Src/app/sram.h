@@ -50,11 +50,17 @@ namespace sram {
         std::optional<std::chrono::seconds> cooldownNextUnlock = std::nullopt;
 
 
-        /**
+        /*
          * Soft start settings
          */
         bool softStartEnabled = true;
         std::chrono::milliseconds softStartDuration = std::chrono::milliseconds(200);
+
+
+        /**
+         * @brief Fully disables all protection checks, TC and power control.
+         */
+        bool mechModMode = false;
     };
 
     /**

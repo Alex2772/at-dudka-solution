@@ -18,16 +18,9 @@
 #pragma once
 
 
-#include "ScreenLandscape.h"
+#include "ScreenList.h"
 
-class ScreenAbout: public ScreenLandscape {
+class ScreenSecretSettings: public ScreenList {
 public:
-    ScreenAbout();
-
-    void render(FramebufferImpl& fb) override;
-
-    void onKeyDown(input::Key key) override;
-
-private:
-    int mSecretSettingsCounter = 0;
+    ScreenSecretSettings();
 };

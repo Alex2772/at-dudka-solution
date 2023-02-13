@@ -28,10 +28,12 @@ std::array<bool, 8> gKeys;
 
 std::uint32_t gLastSignalTime = 0;
 std::uint32_t gLastKeyRepeatTime = 0;
+std::uint32_t gLastKeyRepeatCounter = 0;
 input::Key gLastKey = input::Key::NONE;
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+    gLastKeyRepeatCounter = 0;
     gLastKeyRepeatTime = gLastSignalTime = HAL_GetTick();
 
     input::Key k;
@@ -87,10 +89,15 @@ bool input::isKeyDown(input::Key key) {
 }
 
 void input::frame() {
-    if (HAL_GetTick() - gLastSignalTime > 500) {
+    if (HAL_GetTick() - gLastSignalTime > 1000) {
         if (isKeyDown(gLastKey)) {
+            int delay = config::INPUT_KEY_REPEAT_DELAY;
+            if (gLastKeyRepeatCounter > 10) {
+                delay = delay * 3 / 4;
+            }
 
-            if (HAL_GetTick() - gLastKeyRepeatTime > config::INPUT_KEY_REPEAT_DELAY) {
+            if (HAL_GetTick() - gLastKeyRepeatTime > delay) {
+                gLastKeyRepeatCounter++;
                 app::onKeyLongPressFrame(gLastKey);
                 gLastKeyRepeatTime = HAL_GetTick() / config::INPUT_KEY_REPEAT_DELAY * config::INPUT_KEY_REPEAT_DELAY;
             }

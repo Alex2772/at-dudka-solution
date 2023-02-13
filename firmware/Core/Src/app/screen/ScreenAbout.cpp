@@ -20,6 +20,9 @@
 //
 
 #include "ScreenAbout.h"
+#include "app/app.h"
+#include "ScreenSecretSettings.h"
+
 extern const std::uint8_t image2cpp_logo_med_png[];
 extern const std::uint8_t image2cpp_qr_png[];
 
@@ -41,4 +44,11 @@ void ScreenAbout::render(FramebufferImpl& fb) {
 
     fb.string({0, 40}, Color::WHITE, "Версия:", FONT_FACE_TERMINUS_6X12_KOI8_R);
     fb.string({0, 40 + 12}, Color::WHITE, GIT_SHA1, FONT_FACE_BITOCRA_4X7);
+}
+
+void ScreenAbout::onKeyDown(input::Key key) {
+    ScreenLandscape::onKeyDown(key);
+    if (mSecretSettingsCounter++ == 7) {
+        app::showScreen(std::make_unique<ScreenSecretSettings>());
+    }
 }

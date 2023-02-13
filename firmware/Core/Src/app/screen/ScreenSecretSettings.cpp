@@ -15,19 +15,17 @@
 //  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //  *
 
-#pragma once
+//
+// Created by Alex2772 on 2/14/2023.
+//
 
+#include "ScreenSecretSettings.h"
+#include "app/SettingsUtil.h"
+#include "ScreenDebug.h"
 
-#include "ScreenLandscape.h"
+ScreenSecretSettings::ScreenSecretSettings(): ScreenList("Инжен.меню", {
+    makeSetting("Режим мехмода", &sram::Config::mechModMode),
+    makeItem("Отладка", makeShowScreen<ScreenDebug>())
+}) {
 
-class ScreenAbout: public ScreenLandscape {
-public:
-    ScreenAbout();
-
-    void render(FramebufferImpl& fb) override;
-
-    void onKeyDown(input::Key key) override;
-
-private:
-    int mSecretSettingsCounter = 0;
-};
+}

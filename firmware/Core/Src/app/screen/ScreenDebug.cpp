@@ -16,17 +16,18 @@
  */
 
 
-#include "ScreenCalibration.h"
+#include "ScreenDebug.h"
 #include "app/util.h"
 #include "app/adc.h"
 #include "app/app.h"
 #include "app/rtc.h"
 
-ScreenCalibration::ScreenCalibration() {
+ScreenDebug::ScreenDebug() {
     adc::setShutter(config::SHUTTER_DEFAULT);
 }
 
-void ScreenCalibration::render(FramebufferImpl& fb) {
+void ScreenDebug::render(FramebufferImpl& fb) {
+    fb.verticalOrientation();
     auto row = [&](unsigned y, std::string_view title, std::string_view value) {
         fb.string({0, y}, Color::WHITE, title, FONT_FACE_BITOCRA_4X7);
         fb.string({60, y}, Color::WHITE, value, FONT_FACE_BITOCRA_4X7, TextAlign::RIGHT);
@@ -57,4 +58,11 @@ void ScreenCalibration::render(FramebufferImpl& fb) {
 
     row(40, "butt", std::string(util::format("%c", c)));
     row(60, "RTC", util::format("%d", int(rtc::now().count())));
+}
+
+void ScreenDebug::onKeyDown(input::Key key) {
+    IScreen::onKeyDown(key);
+    if (key == input::Key::LEFT) {
+        close();
+    }
 }
