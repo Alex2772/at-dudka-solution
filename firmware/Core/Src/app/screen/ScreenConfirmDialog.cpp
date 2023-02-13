@@ -19,17 +19,7 @@
 #include "ScreenConfirmDialog.h"
 
 
-void ScreenConfirmDialog::onKeyDown(input::Key key) {
-    ScreenDialog::onKeyDown(key);
-
-    switch (key) {
-        case input::Key::OK:
-            mOnConfirm();
-            close();
-            break;
-
-        case input::Key::LEFT:
-            close();
-            break;
-    }
-}
+ScreenConfirmDialog::ScreenConfirmDialog(std::string message, std::function<void()> onConfirm) : ScreenMessageDialog(std::move(message), {
+        { input::Key::DOWN, "Отмена", []{}, },
+        { input::Key::OK, "Да", std::move(onConfirm), },
+}) {}

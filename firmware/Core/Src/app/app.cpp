@@ -49,6 +49,11 @@ std::vector<std::unique_ptr<IScreen>> gScreens;
 unsigned gLastBatteryUpdate = 0;
 unsigned gBatteryLevel = 0;
 
+
+static ScreenMessageDialog::Action makeShutdownAction() {
+    return { input::Key::OK, "Выключить", [] { app::shutdown(); } };
+}
+
 extern "C" void app_run() {
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -204,9 +209,7 @@ extern "C" void app_run() {
     if (app::globals.initialResistance) {
         if (*app::globals.initialResistance < 0.03f) {
             app::globals.fireAllowed = false;
-            auto dialog = std::make_unique<ScreenMessageDialog>("КЗ койла", [] {
-                app::shutdown();
-            });
+            auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
             dialog->setIcon(image2cpp_warning_png);
             app::showScreen(std::move(dialog));
         }
@@ -238,7 +241,6 @@ extern "C" void app_run() {
 
 }
 
-
 bool app::fireButtonPressed() {
     return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 }
@@ -262,9 +264,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (app::globals.smoothCurrent >= config::MAX_CURRENT) {
                 if constexpr (!config::CALIBRATION) {
                     app::runOnUiThread([] {
-                        auto dialog = std::make_unique<ScreenMessageDialog>("КЗ койла", [] {
-                            app::shutdown();
-                        });
+                        auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
                         dialog->setIcon(image2cpp_warning_png);
                         app::showScreen(std::move(dialog));
                     });
@@ -308,7 +308,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     if (app::globals.smoothBatteryVoltage < 3.4f && !app::isCharging()) {
                         batteryDischargeAlreadyNotified = true;
                         app::runOnUiThread([] {
-                            auto dialog = std::make_unique<ScreenMessageDialog>("Аккум разряжен", [] {});
+                            auto dialog = ScreenMessageDialog::make("Аккум разряжен");
                             dialog->setIcon(image2cpp_warning_png);
                             app::showScreen(std::move(dialog));
                         });
@@ -323,9 +323,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                             coilDisconnectedFlag = true;
                             app::runOnUiThread([] {
                                 app::globals.fireAllowed = false;
-                                auto dialog = std::make_unique<ScreenMessageDialog>("Отвал койла", [] {
-                                    app::shutdown();
-                                });
+                                auto dialog = ScreenMessageDialog::make("Отвал койла", { makeShutdownAction() });
                                 dialog->setIcon(image2cpp_warning_png);
                                 app::showScreen(std::move(dialog));
                             });
@@ -343,9 +341,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                             sram::ram().cooldownNextUnlock = std::chrono::duration_cast<std::chrono::seconds>(enum_traits<CooldownDuration>::duration(sram::ram().cooldownDuration));
                             sram::save();
 
-                            auto dialog = std::make_unique<ScreenMessageDialog>("Лимит исчерпан", [] {
-                                app::shutdown();
-                            });
+                            auto dialog = ScreenMessageDialog::make("Лимит исчерпан", { makeShutdownAction() });
                             dialog->setIcon(image2cpp_cooldown_png);
                             app::showScreen(std::move(dialog));
                         });

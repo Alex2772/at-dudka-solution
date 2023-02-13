@@ -19,11 +19,19 @@
 
 
 #include <functional>
+#include <memory>
 #include "ScreenDialog.h"
 
 class ScreenMessageDialog: public ScreenDialog {
 public:
-    ScreenMessageDialog(std::string message, std::function<void()> onConfirm): mMessage(std::move(message)), mOnConfirm(std::move(onConfirm)) {}
+
+    struct Action {
+        input::Key key;
+        const char* name;
+        std::function<void()> onSelected;
+    };
+
+    using Actions = std::vector<Action>;
 
     void renderDialog(FramebufferImpl& fb) override;
 
@@ -33,10 +41,19 @@ public:
         mIcon = icon;
     }
 
+
+    static std::unique_ptr<ScreenMessageDialog> make(std::string message, Actions actions = {{ input::Key::OK, "Закрыть", []{} }}) {
+        return std::unique_ptr<ScreenMessageDialog>(new ScreenMessageDialog(std::move(message), std::move(actions)));
+    }
+
 protected:
     std::string mMessage;
     const std::uint8_t* mIcon;
-    std::function<void()> mOnConfirm;
+    Actions mActions;
+
+    ScreenMessageDialog(std::string message, Actions actions): mMessage(std::move(message)), mActions(std::move(actions)) {}
+
+    const uint8_t* getKeyImage(input::Key key);
 };
 
 

@@ -23,9 +23,7 @@
 
 class ScreenConfirmDialog: public ScreenMessageDialog {
 public:
-    ScreenConfirmDialog(std::string message, std::function<void()> onConfirm): ScreenMessageDialog(std::move(message), std::move(onConfirm)) {}
-
-    void onKeyDown(input::Key key) override;
+    ScreenConfirmDialog(std::string message, std::function<void()> onConfirm);
 
 };
 

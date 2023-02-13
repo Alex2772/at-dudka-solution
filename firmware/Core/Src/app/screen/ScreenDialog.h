@@ -22,6 +22,8 @@
 
 class ScreenDialog: public IScreen {
 public:
+    static constexpr int WIDTH = 128 - 24;
+
     ~ScreenDialog() override = default;
 
     void onKeyLongPressFrame(input::Key key) override;

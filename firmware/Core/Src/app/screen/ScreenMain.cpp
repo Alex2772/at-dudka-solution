@@ -58,7 +58,9 @@ void ScreenMain::render(FramebufferImpl& fb) {
     fb.string({32, 44},  Color::WHITE, "<Выкл|Меню>", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
 
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
-    row(116 - 12 * 4, "Мощ", util::format("%0.1fW", app::globals.smoothCurrent * app::globals.smoothBatteryVoltage));
+    auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
+    power = glm::min(power, float(sram::ram().maxPower));
+    row(116 - 12 * 4, "Мощ", util::format("%0.1fW", power));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
     row(116 - 12 * 2, "T", sram::ram().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
     row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));

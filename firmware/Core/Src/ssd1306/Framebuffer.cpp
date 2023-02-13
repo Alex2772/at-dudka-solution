@@ -93,9 +93,21 @@ static std::vector<const font_char_desc_t*> compileString(const font_info_t* inf
     return output;
 }
 
+static bool isUtf8Font(font_face_t font) {
+    return font == FONT_FACE_TERMINUS_6X12_KOI8_R || font == FONT_FACE_TERMINUS_BOLD_8X14_KOI8_R;
+}
+
+int FramebufferImpl::stringLength(std::string_view string, font_face_t font) {
+    const auto info = font_builtin_fonts[font];
+    const auto compiled = compileString(info, string, isUtf8Font(font));
+    return std::accumulate(compiled.begin(), compiled.end(), 0, [](int v, const auto& c) {
+        return v + c->width;
+    });
+}
+
 int FramebufferImpl::string(glm::ivec2 position, Color color, std::string_view string, font_face_t font, TextAlign align) {
     const auto info = font_builtin_fonts[font];
-    const auto compiledString = compileString(info, string, font == FONT_FACE_TERMINUS_6X12_KOI8_R || font == FONT_FACE_TERMINUS_BOLD_8X14_KOI8_R);
+    const auto compiledString = compileString(info, string, isUtf8Font(font));
 
     if (align != TextAlign::LEFT) {
         const auto stringWidth = std::accumulate(compiledString.begin(), compiledString.end(), 0, [](std::size_t lhs, const font_char_desc_t* rhs) {

@@ -87,6 +87,8 @@ public:
 
     int string(glm::ivec2 position, Color color, std::string_view string, font_face_t font, TextAlign align = TextAlign::LEFT);
 
+    static int stringLength(std::string_view string, font_face_t font);
+
     void image(glm::ivec2 position, const std::uint8_t* data);
 
     void setTransform(const glm::imat3x3& transform) {
