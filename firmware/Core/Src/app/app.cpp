@@ -247,9 +247,14 @@ bool app::fireButtonPressed() {
 
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim == &htim4) {
-        // called 100 times per second
+    if (htim == &htim4) { // called 100 times per second
         const bool isFiring = app::globals.fireAllowed && app::fireButtonPressed();
+        if (static bool wasFiring = false; isFiring != wasFiring) {
+            wasFiring = isFiring;
+            if (isFiring) {
+                app::globals.fireBeginTime = HAL_GetTick();
+            }
+        }
         auto instantCurrent = adc::current();
 
         app::globals.currentResistance = adc::coilResistance();
@@ -287,7 +292,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     const auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
 
                     bool doTheFiringOnThisFrame = app::globals.currentTemperature + 20 < app::globals.maxTemperature
-                                               && power < sram::config().maxPower;
+                                               && power < app::maxPowerIncludingSoftStart();
 
                     if (sram::config().cooldownEnabled && doTheFiringOnThisFrame) {
                         app::globals.cooldownStreak += 0.01f;
@@ -437,3 +442,11 @@ bool app::isCharging() {
     return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 }
 
+float app::maxPowerIncludingSoftStart() {
+    if (!sram::config().softStartEnabled) {
+        return float(sram::config().maxPower);
+    }
+
+    auto firingTime = milliseconds(HAL_GetTick() - app::globals.fireBeginTime);
+    return float(sram::config().maxPower) * glm::clamp(float(firingTime.count()) / float(sram::config().softStartDuration.count()), 0.f, 1.f);
+}

@@ -48,6 +48,13 @@ namespace sram {
          * (RTC) should reach to unblock the device.
          */
         std::optional<std::chrono::seconds> cooldownNextUnlock = std::nullopt;
+
+
+        /**
+         * Soft start settings
+         */
+        bool softStartEnabled = true;
+        std::chrono::milliseconds softStartDuration = std::chrono::milliseconds(200);
     };
 
     /**

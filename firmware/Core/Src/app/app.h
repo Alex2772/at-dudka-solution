@@ -43,6 +43,7 @@ namespace app {
         int currentTemperature = config::DEFAULT_TEMPERATURE;
         uint32_t lastActionTick = 0;
         float cooldownStreak = 0.f;
+        uint32_t fireBeginTime = 0;
     };
     extern Globals globals;
 
@@ -66,6 +67,8 @@ namespace app {
 
     bool fireButtonPressed();
     bool isCharging();
+
+    float maxPowerIncludingSoftStart();
 }
 
 

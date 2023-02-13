@@ -87,7 +87,7 @@ bool input::isKeyDown(input::Key key) {
 }
 
 void input::frame() {
-    if (HAL_GetTick() - gLastSignalTime > 1000) {
+    if (HAL_GetTick() - gLastSignalTime > 500) {
         if (isKeyDown(gLastKey)) {
 
             if (HAL_GetTick() - gLastKeyRepeatTime > config::INPUT_KEY_REPEAT_DELAY) {

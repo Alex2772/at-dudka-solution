@@ -26,14 +26,17 @@
 #include <app/sram.h>
 #include <app/screen/ScreenAbout.h>
 
+using namespace std::chrono_literals;
+
 extern const std::uint8_t image2cpp_arrow_up_png[];
 extern const std::uint8_t image2cpp_arrow_down_png[];
 
-template<typename T>
-std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt, T(sram::Config::* field), T min, T max, T step) {
+template<typename T, typename Formatter>
+std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, Formatter&& formatter, T(sram::Config::* field), T min, T max, T step) {
+    static_assert(std::is_invocable_r_v<std::string_view, Formatter, T>, "Formatter expected to be invokable! std::string_view(Formatter)(T)");
     using Field = decltype(field);
     struct ScreenSetting: ScreenLandscape {
-        ScreenSetting(const char* name, const char* fmt, T min, T max, T step, Field field) : name(name), fmt(fmt),
+        ScreenSetting(const char* name, Formatter formatter, T min, T max, T step, Field field) : name(name), formatter(std::move(formatter)),
                                                                                               min(min), max(max),
                                                                                               step(step), field(field) {}
 
@@ -49,7 +52,7 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
             constexpr glm::ivec2 SIZE = { 60, 26 };
             constexpr int ARROW_SIZE = 10;
 
-            fb.string(CENTER - glm::ivec2{0, 24 / 2}, Color::WHITE, util::format(fmt, value()), FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1, TextAlign::MIDDLE);
+            fb.string(CENTER - glm::ivec2{0, 24 / 2}, Color::WHITE, formatter(value()), FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1, TextAlign::MIDDLE);
 
             fb.rect(CENTER - SIZE / 2 + glm::ivec2{1, 0}, { SIZE.x - 2, 1 }, Color::WHITE);
             fb.rect(CENTER - SIZE / 2 * glm::ivec2{1, -1} + glm::ivec2{1, 0}, { SIZE.x - 2, 1 }, Color::WHITE);
@@ -104,15 +107,16 @@ std::shared_ptr<ScreenList::IItem> makeSetting(const char* name, const char* fmt
 
     private:
         int mChangeIndication = 0;
-        const char* name, *fmt;
+        const char* name;
+        Formatter formatter;
         T min, max, step;
         Field field;
     };
 
     return ScreenList::makeItem(name, [=]() {
-        app::showScreen(std::make_unique<ScreenSetting>(name, fmt, min, max, step, field));
-    }, [fmt, field]() {
-        return util::format(fmt, sram::config().*field).data();
+        app::showScreen(std::make_unique<ScreenSetting>(name, formatter, min, max, step, field));
+    }, [formatter, field]() {
+        return formatter(sram::config().*field).data();
     });
 }
 
@@ -173,9 +177,9 @@ auto makeShowScreen(Args&&... args) {
 struct ScreenCooldownSettings: ScreenList {
 public:
     ScreenCooldownSettings(): ScreenList("КД затяжек", {
-        makeSetting("Разреш.блок-вку", &sram::Config::cooldownEnabled),
+        makeSetting("Включено", &sram::Config::cooldownEnabled),
         makeSetting("Длит.блок-вки", &sram::Config::cooldownDuration),
-        makeSetting("Кол-во затяжек", "%d", &sram::Config::cooldownThreshold, 1u, 100u, 1u),
+        makeSetting("Кол-во затяжек", [](auto v){ return util::format("%d", v); }, &sram::Config::cooldownThreshold, 1u, 100u, 1u),
         makeItem("Справка", makeShowScreen<ScreenHelp>("КД затяжек",
 R"(Кулдаун затяжек
 позволяет жеско
@@ -214,10 +218,38 @@ R"(Кулдаун затяжек
     }) {}
 };
 
+struct ScreenSoftStartSettings: ScreenList {
+public:
+    ScreenSoftStartSettings(): ScreenList("Плавный пуск", {
+        makeSetting("Включено", &sram::Config::softStartEnabled),
+        makeSetting("Длительность", [](auto v){ return util::format("%0.1fs", float(v.count()) / 1000.f); }, &sram::Config::softStartDuration, 100ms, 5'000ms, 100ms),
+        makeItem("Справка", makeShowScreen<ScreenHelp>("Плавный пуск",
+R"(Плавный пуск по
+нажатию на кнопку
+нагрева постепенно,
+в течение указанного
+времени поднимает
+мощность, от нуля
+до максимальной,
+указанной в
+настройках.
+
+Это позволяет
+избежать кашля и
+тротхита (удара в
+горло).)")),
+        //makeSetting("Тип блок-вки", ),
+    }) {}
+};
+
+
+
+
 
 ScreenSettings::ScreenSettings(): ScreenList("Настройки", {
-    makeSetting("Макс. мощность", "%dW", &sram::Config::maxPower, 4u, 100u, 2u),
+    makeSetting("Макс. мощность", [](auto v){ return util::format("%dW", v); }, &sram::Config::maxPower, 4u, 100u, 2u),
     makeSetting("Тип койла", &sram::Config::material),
+    makeItem("Плавный пуск", makeShowScreen<ScreenSoftStartSettings>()),
     makeItem("Сон", makeShowScreen<ScreenSleepSettings>()),
     makeItem("Кулдаун затяжек",  makeShowScreen<ScreenCooldownSettings>()),
     makeItem("Об устройстве", makeShowScreen<ScreenAbout>()),

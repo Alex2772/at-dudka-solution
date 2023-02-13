@@ -59,7 +59,7 @@ void ScreenMain::render(FramebufferImpl& fb) {
 
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
     auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
-    power = glm::min(power, float(sram::config().maxPower));
+    power = glm::min(power, app::maxPowerIncludingSoftStart());
     row(116 - 12 * 4, "Мощ", util::format("%0.1fW", power));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
     row(116 - 12 * 2, "T", sram::config().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
