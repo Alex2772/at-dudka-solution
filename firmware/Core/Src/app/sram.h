@@ -26,6 +26,25 @@ namespace sram {
 
     struct Config {
         /*
+         * Control data
+         */
+
+        /**
+         * @brief Used to track incompatible version of config.
+         */
+        uint32_t sizeOfConfig = sizeof(Config);
+
+        /**
+         * @brief Tracks flash write count in order to debug and avoid unnecessary writes to FLASH memory
+         */
+        uint32_t writeCounter = 0;
+
+        /**
+         * @brief Used to track whether the user updated his coil or not.
+         */
+        std::optional<float> mLastCoilResistance;
+
+        /*
          * Common settings
          */
         unsigned maxTemperature = 100;        // 100 is neutral temperature; big enough to provide taste and small

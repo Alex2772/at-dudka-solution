@@ -36,6 +36,12 @@ namespace app {
         bool fireAllowed = false;
         int maxTemperature = 210;
         std::optional<float> currentResistance;
+
+        /**
+         * @brief Initial resistance of the coil.
+         * @details
+         * If empty it means coil is not attached.
+         */
         std::optional<float> initialResistance;
 
         float smoothCurrent = 0.f;
@@ -48,6 +54,7 @@ namespace app {
     extern Globals globals;
 
 
+    unsigned& powerLed();
     unsigned& fireMosfet();
 
     void runOnUiThread(std::function<void()> callback);
@@ -56,6 +63,7 @@ namespace app {
     void closeScreen(IScreen* screen);
 
     void shutdown();
+    void initCoil();
 
     void resetAutoShutdownTimer();
 
@@ -67,6 +75,8 @@ namespace app {
 
     bool fireButtonPressed();
     bool isCharging();
+
+    bool isDialogShown();
 
     float maxPowerIncludingSoftStart();
 }

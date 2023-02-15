@@ -30,6 +30,7 @@
 extern const std::uint8_t image2cpp_logo_small_png[];
 extern const std::uint8_t image2cpp_charging_png[];
 extern const std::uint8_t image2cpp_lock_png[];
+extern const std::uint8_t image2cpp_coil_png[];
 
 void ScreenMain::render(FramebufferImpl& fb) {
     fb.verticalOrientation();
@@ -62,8 +63,14 @@ void ScreenMain::render(FramebufferImpl& fb) {
     if (!sram::config().mechModMode) power = glm::min(power, app::maxPowerIncludingSoftStart());
     row(116 - 12 * 4, "Мощ", util::format(power > 100.f ? "%0.0fW" : "%0.1fW", power));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
-    row(116 - 12 * 2, "T", sram::config().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
-    row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
+
+    if (app::globals.initialResistance) {
+        row(116 - 12 * 2, "T", sram::config().material == Material::KANTHAL ? "KAN" : util::format("%d\xb0""C", app::globals.currentTemperature));
+        row(116 - 12, "R", util::format("%0.2f\x80", app::globals.currentResistance.value_or(*app::globals.initialResistance)));
+    } else {
+        row(116 - 12 * 2, "T", "?\xb0""C");
+        row(116 - 12, "R", "?\x80");
+    }
 
     fb.image({7, 124}, image2cpp_logo_small_png);
 

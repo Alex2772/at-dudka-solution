@@ -111,7 +111,7 @@ R"(Плавный пуск по
 
 ScreenSettings::ScreenSettings(): ScreenList("Настройки", {
     makeSetting("Макс. мощность", [](auto v){ return util::format("%dW", v); }, &sram::Config::maxPower, 4u, 200u, 2u),
-    makeSetting("Тип койла", &sram::Config::material),
+    makeSetting("М-риал койла", &sram::Config::material),
     makeItem("Плавный пуск", makeShowScreen<ScreenSoftStartSettings>()),
     makeItem("Сон", makeShowScreen<ScreenSleepSettings>()),
     makeItem("Кулдаун затяжек", makeShowScreen<ScreenCooldownSettings>()),

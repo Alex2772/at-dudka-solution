@@ -21,6 +21,7 @@
 #include "app/adc.h"
 #include "app/app.h"
 #include "app/rtc.h"
+#include "app/sram.h"
 
 ScreenDebug::ScreenDebug() {
     adc::setShutter(config::SHUTTER_DEFAULT);
@@ -58,6 +59,7 @@ void ScreenDebug::render(FramebufferImpl& fb) {
 
     row(40, "butt", std::string(util::format("%c", c)));
     row(60, "RTC", util::format("%d", int(rtc::now().count())));
+    row(80, "FLASH", util::format("%d", sram::config().writeCounter));
 }
 
 void ScreenDebug::onKeyDown(input::Key key) {

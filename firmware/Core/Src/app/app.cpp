@@ -27,6 +27,7 @@
 #include "app/screen/ScreenDebug.h"
 #include "sram.h"
 #include "rtc.h"
+#include "app/screen/ScreenInitializationDialog.h"
 #include <ssd1306/SSD1306.h>
 #include <glm/gtc/constants.hpp>
 #include <vector>
@@ -48,6 +49,7 @@ FunctionQueue gUiThreadQueue;
 std::vector<std::unique_ptr<IScreen>> gScreens;
 unsigned gLastBatteryUpdate = 0;
 unsigned gBatteryLevel = 0;
+bool gCoilDisconnectedFlag = false;
 
 
 static ScreenMessageDialog::Action makeShutdownAction() {
@@ -58,8 +60,8 @@ extern "C" void app_run() {
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+    app::powerLed() = 10000;
+    app::fireMosfet() = 0;
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
@@ -130,7 +132,7 @@ extern "C" void app_run() {
                                 fb.clear();
                                 display.push(fb);
                                 isLockScreenVisible = false;
-                                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                                app::powerLed() = 0;
                             }
                         }
 
@@ -141,7 +143,7 @@ extern "C" void app_run() {
                                 drawLockScreen();
                                 isLockScreenVisible = true;
                                 lockScreenAppearedTime = HAL_GetTick();
-                                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                                app::powerLed() = 10000;
                             }
                         }
                     }
@@ -159,43 +161,20 @@ extern "C" void app_run() {
             fb.clear();
         }
 
-        fb.image({32, 64}, image2cpp_logo_png);
-        display.push(fb);
+        const bool isCoilAttached = adc::coilVoltage() > 0.2f;
 
-        // several attempts  to measure the initial coil resistance; we have not found another solution to stabilize the measures between reboots
-
-        for (int i = 0; i < 3; ++i) {
-            app::fireMosfet() = 10000;
-
-            auto coilCheckTick = HAL_GetTick();
-
-            decltype(adc::coilResistance()) attempt;
-            while (!(attempt = adc::coilResistance())) {
-                if (HAL_GetTick() - coilCheckTick > 1000) {
-                    break;
-                }
-            }
-
-            app::fireMosfet() = 0;
-            if (attempt) {
-                app::globals.initialResistance = std::min(app::globals.initialResistance.value_or(2.f), *attempt);
-            }
-            HAL_Delay(300);
-        }
-
-        // reduce the initial resistance to decrease minimal temperature control power
-        if (app::globals.initialResistance) {
-            *app::globals.initialResistance *= 0.8f;
-        }
-
-        HAL_TIM_Base_Start_IT(&htim4);
-        if (!app::globals.initialResistance) {
+        if (!isCoilAttached) {
             fb.clear();
             fb.string({32, 0}, Color::WHITE, "Где койл?", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
             fb.image({32, 64}, image2cpp_no_coil_png);
             display.push(fb);
-            HAL_Delay(3000);
-            app::shutdown();
+            HAL_Delay(1000);
+            HAL_TIM_Base_Start_IT(&htim4);
+        } else {
+            fb.image({32, 64}, image2cpp_logo_png);
+            display.push(fb);
+
+            app::initCoil();
         }
 
         app::globals.maxTemperature = sram::config().maxTemperature;
@@ -205,19 +184,15 @@ extern "C" void app_run() {
 
     app::globals.smoothBatteryVoltage = adc::batteryVoltage();
 
-
-    if (app::globals.initialResistance) {
-        if (*app::globals.initialResistance < 0.03f && !sram::config().mechModMode) {
-            app::globals.fireAllowed = false;
-            auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
-            dialog->setIcon(image2cpp_warning_png);
-            app::showScreen(std::move(dialog));
-        }
-    }
-
     for (;;) {
         gUiThreadQueue.process();
         input::frame();
+
+        if (!app::globals.initialResistance && app::fireButtonPressed() && !app::isDialogShown()) {
+            auto dialog = ScreenMessageDialog::make("Нет койла");
+            dialog->setIcon(image2cpp_warning_png);
+            app::showScreen(std::move(dialog));
+        }
 
         fb.clear();
         if (!gScreens.empty()) {
@@ -245,6 +220,7 @@ bool app::fireButtonPressed() {
     return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 }
 
+
 extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim == &htim4) { // called 100 times per second
@@ -269,7 +245,9 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (app::globals.smoothCurrent >= config::MAX_CURRENT && !sram::config().mechModMode) {
                 if constexpr (!config::CALIBRATION) {
                     app::runOnUiThread([] {
-                        auto dialog = ScreenMessageDialog::make("КЗ койла", { makeShutdownAction() });
+                        auto dialog = ScreenMessageDialog::make("КЗ койла", { { input::Key::OK, "Закрыть", [] {
+                            app::globals.fireAllowed = true;
+                        } } });
                         dialog->setIcon(image2cpp_warning_png);
                         app::showScreen(std::move(dialog));
                     });
@@ -287,7 +265,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 if (config::CALIBRATION || sram::config().mechModMode) {
 
                     app::fireMosfet() = 10000;
-                    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                    app::powerLed() = 10000;
                 } else {
                     const auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
 
@@ -299,13 +277,13 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     }
 
                     app::fireMosfet() = doTheFiringOnThisFrame ? 10000 : 0;
-                    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000);
+                    app::powerLed() = 10000;
                 }
 
             } else {
-                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+                app::fireMosfet() = 0;
                 static unsigned frameIndex = 0;
-                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 10000 * glm::abs(glm::sin(frameIndex / 500.f * glm::pi<float>() * 2.f)));
+                app::powerLed() = 10000 * glm::abs(glm::sin(frameIndex / 500.f * glm::pi<float>() * 2.f));
                 frameIndex += 1;
                 frameIndex %= 500;
 
@@ -332,14 +310,15 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 }
 
                 if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
-                    static bool coilDisconnectedFlag = false;
 
                     if constexpr (!config::CALIBRATION) {
-                        if (!coilDisconnectedFlag && !sram::config().mechModMode) {
-                            coilDisconnectedFlag = true;
+                        if (!gCoilDisconnectedFlag && !sram::config().mechModMode) {
+                            gCoilDisconnectedFlag = true;
                             app::runOnUiThread([] {
                                 app::globals.fireAllowed = false;
-                                auto dialog = ScreenMessageDialog::make("Отвал койла", { makeShutdownAction() });
+                                app::globals.initialResistance.reset();
+                                app::powerLed() = 10000;
+                                auto dialog = ScreenMessageDialog::make("Отвал койла");
                                 dialog->setIcon(image2cpp_warning_png);
                                 app::showScreen(std::move(dialog));
                             });
@@ -366,6 +345,19 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 }
                 app::globals.cooldownStreak = glm::ceil(app::globals.cooldownStreak);
             }
+        } else if (!app::globals.initialResistance) {
+            const bool coilAttached = adc::coilVoltage() > 3.f;
+            static bool askedForReinitialization = false;
+            if (coilAttached) {
+                if (!askedForReinitialization && !app::isDialogShown()) {
+                    askedForReinitialization = true;
+                    app::runOnUiThread([] {
+                        app::showScreen(std::make_unique<ScreenInitializationDialog>());
+                    });
+                }
+            } else {
+                askedForReinitialization = false;
+            }
         }
 
         if (int(HAL_GetTick()) - gLastBatteryUpdate > 60'000 || gLastBatteryUpdate == 0) {
@@ -385,6 +377,10 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 unsigned& app::fireMosfet() {
     return (unsigned int&) htim3.Instance->CCR2;
+}
+
+unsigned& app::powerLed() {
+    return (unsigned int&) htim3.Instance->CCR1;
 }
 
 
@@ -460,4 +456,60 @@ float app::maxPowerIncludingSoftStart() {
 
     auto firingTime = milliseconds(HAL_GetTick() - app::globals.fireBeginTime);
     return float(sram::config().maxPower) * glm::clamp(float(firingTime.count()) / float(sram::config().softStartDuration.count()), 0.f, 1.f);
+}
+
+void app::initCoil() {
+    adc::setShutter(config::SHUTTER_BOOT);
+    HAL_TIM_Base_Stop_IT(&htim4);
+    // several attempts  to measure the initial coil resistance; we have not found another solution to stabilize the measures between reboots
+    app::globals.initialResistance.reset();
+    for (int i = 0; i < 3; ++i) {
+        app::fireMosfet() = 10000;
+
+        auto coilCheckTick = HAL_GetTick();
+
+        decltype(adc::coilResistance()) attempt;
+        while (!(attempt = adc::coilResistance())) {
+            if (HAL_GetTick() - coilCheckTick > 1000) {
+                break;
+            }
+        }
+
+        app::fireMosfet() = 0;
+        if (attempt) {
+            app::globals.initialResistance = std::min(app::globals.initialResistance.value_or(2.f), *attempt);
+        }
+        HAL_Delay(300);
+    }
+    adc::setShutter(config::SHUTTER_DEFAULT);
+    HAL_TIM_Base_Start_IT(&htim4);
+
+    gCoilDisconnectedFlag = false;
+    // reduce the initial resistance to decrease minimal temperature control power
+    if (app::globals.initialResistance) {
+        *app::globals.initialResistance *= 0.8f;
+
+        if (*app::globals.initialResistance < 0.01f && !sram::config().mechModMode) {
+            app::globals.fireAllowed = false;
+            app::globals.initialResistance.reset();
+            app::runOnUiThread([] {
+                auto dialog = ScreenMessageDialog::make("КЗ койла");
+                dialog->setIcon(image2cpp_warning_png);
+                app::showScreen(std::move(dialog));
+            });
+        } else {
+            app::globals.fireAllowed = true;
+        }
+    } else {
+        app::runOnUiThread([] {
+            auto dialog = ScreenMessageDialog::make("Отвал койла");
+            dialog->setIcon(image2cpp_warning_png);
+            app::showScreen(std::move(dialog));
+        });
+    }
+
+}
+
+bool app::isDialogShown() {
+    return gScreens.back()->hasTransparency();
 }

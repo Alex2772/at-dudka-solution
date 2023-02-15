@@ -59,7 +59,9 @@ static unsigned computeCrc(const sram::Config& cfg) {
 
 ConfigWithCrc& ramConfigWithCrc() {
     static ConfigWithCrc configWithCrc = [] {
-        if (computeCrc(flashConfig().config) == flashConfig().crc) {
+        if (computeCrc(flashConfig().config) == flashConfig().crc &&  // hashsum check
+            flashConfig().config.sizeOfConfig == sizeof(sram::Config) // version check
+            ) {
             return flashConfig();
         }
         return ConfigWithCrc{};
@@ -83,6 +85,8 @@ void sram::save() {
     }
 
     FLASH_Erase_Sector(1, FLASH_VOLTAGE_RANGE_3);
+
+    config().writeCounter += 1;
 
     ramConfigWithCrc().crc = computeCrc(config());
 
