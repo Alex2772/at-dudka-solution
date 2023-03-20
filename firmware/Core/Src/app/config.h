@@ -68,7 +68,7 @@ namespace config {
     /**
      * @brief The current which is considered as short circuit
      */
-    static constexpr auto MAX_CURRENT = 20;
+    static constexpr auto MAX_CURRENT = 100;
 
     static constexpr auto DEFAULT_TEMPERATURE = 30;
 

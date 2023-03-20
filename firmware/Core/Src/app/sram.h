@@ -50,7 +50,7 @@ namespace sram {
         unsigned maxTemperature = 100;        // 100 is neutral temperature; big enough to provide taste and small
                                               // enough to avoid overheat
 
-        unsigned maxPower = 10;               // 10 is the most comfortable power; no throat hit
+        unsigned maxPower = 100;
         bool lock = false;
         Material material = Material::SS316L; // popular material for TC
         SleepDuration sleepTimout = SleepDuration::k2MIN;

@@ -24,6 +24,7 @@
 #include "app/sram.h"
 #include "ScreenSettings.h"
 #include "ScreenMessageDialog.h"
+#include "ScreenConfirmDialog.h"
 
 #include <stm32f4xx.h>
 
@@ -31,6 +32,7 @@ extern const std::uint8_t image2cpp_logo_small_png[];
 extern const std::uint8_t image2cpp_charging_png[];
 extern const std::uint8_t image2cpp_lock_png[];
 extern const std::uint8_t image2cpp_coil_png[];
+extern const std::uint8_t image2cpp_poweroff_png[];
 
 void ScreenMain::render(FramebufferImpl& fb) {
     fb.verticalOrientation();
@@ -40,8 +42,17 @@ void ScreenMain::render(FramebufferImpl& fb) {
     };
 
 
-    fb.string({32, 0}, Color::WHITE, util::format("%d\xb0""C", app::globals.maxTemperature), FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1, TextAlign::MIDDLE);
-
+    {
+        auto topbarString = util::format("%d\xb0""C", app::globals.maxTemperature);
+        if (app::globals.burnoutMode) {
+            topbarString = "MAX";
+        }
+        fb.string({32, 0},
+                  Color::WHITE,
+                  topbarString,
+                  FONT_FACE_TERMINUS_BOLD_12X24_ISO8859_1,
+                  TextAlign::MIDDLE);
+    }
     fb.rect({0, 0}, {64, 24}, Color::INVERT);
 
     if (sram::config().cooldownEnabled) {
@@ -56,7 +67,13 @@ void ScreenMain::render(FramebufferImpl& fb) {
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
 
-    fb.string({32, 44},  Color::WHITE, "<Выкл|Меню>", FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+    {
+        auto str = "<Выкл|Меню>";
+        if (app::globals.burnoutMode) {
+            str = "ПРОЖИГ";
+        }
+        fb.string({32, 44}, Color::WHITE, str, FONT_FACE_TERMINUS_6X12_KOI8_R, TextAlign::MIDDLE);
+    }
 
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
     auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
@@ -93,7 +110,28 @@ ScreenMain::ScreenMain() {
 
 void ScreenMain::onKeyDown(input::Key key) {
     IScreen::onKeyDown(key);
+
+    if (app::globals.burnoutMode) {
+        app::globals.burnoutMode = false;
+        return;
+    }
+
     handleKeyTemperature(key);
+
+    switch (key) {
+        case input::Key::RIGHT:
+            app::showScreen(std::make_unique<ScreenSettings>());
+            break;
+        case input::Key::LEFT: {
+            auto dialog = std::make_unique<ScreenConfirmDialog>("Заблокировать?", [] {
+                sram::config().lock = true;
+                app::shutdown();
+            });
+            dialog->setIcon(image2cpp_poweroff_png);
+            app::showScreen(std::move(dialog));
+            break;
+        }
+    }
 }
 
 void ScreenMain::onKeyLongPressFrame(input::Key key) {
@@ -114,9 +152,6 @@ void ScreenMain::handleKeyTemperature(input::Key key) const {
             break;
         case input::Key::DOWN:
             app::globals.maxTemperature -= 5;
-            break;
-        case input::Key::RIGHT:
-            app::showScreen(std::make_unique<ScreenSettings>());
             break;
     }
     app::globals.maxTemperature = glm::clamp(app::globals.maxTemperature, 50, 900);

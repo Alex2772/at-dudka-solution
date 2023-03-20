@@ -35,7 +35,6 @@
 extern const std::uint8_t image2cpp_logo_png[];
 extern const std::uint8_t image2cpp_no_coil_png[];
 extern const std::uint8_t image2cpp_lock_png[];
-extern const std::uint8_t image2cpp_poweroff_png[];
 extern const std::uint8_t image2cpp_warning_png[];
 extern const std::uint8_t image2cpp_cooldown_png[];
 
@@ -262,7 +261,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (isFiring) {
                 app::resetAutoShutdownTimer();
 
-                if (config::CALIBRATION || sram::config().mechModMode) {
+                if (config::CALIBRATION || sram::config().mechModMode || app::globals.burnoutMode) {
 
                     app::fireMosfet() = 10000;
                     app::powerLed() = 10000;
@@ -309,7 +308,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     }
                 }
 
-                if (adc::coilVoltage() < 0.2f && adc::current() < 0.1f) {
+                if (adc::coilVoltage() < 0.2f && app::globals.smoothCurrent < 0.01f) {
 
                     if constexpr (!config::CALIBRATION) {
                         if (!gCoilDisconnectedFlag && !sram::config().mechModMode) {
@@ -391,17 +390,8 @@ void app::runOnUiThread(std::function<void()> callback) {
 void app::onKeyDown(input::Key key) {
     app::resetAutoShutdownTimer();
 
-    if (gScreens.size() <= 1 && key == input::Key::LEFT) {
-        auto dialog = std::make_unique<ScreenConfirmDialog>("Заблокировать?", [] {
-            sram::config().lock = true;
-            app::shutdown();
-        });
-        dialog->setIcon(image2cpp_poweroff_png);
-        app::showScreen(std::move(dialog));
-    } else {
-        if (!gScreens.empty()) {
-            gScreens.back()->onKeyDown(key);
-        }
+    if (!gScreens.empty()) {
+        gScreens.back()->onKeyDown(key);
     }
 }
 
@@ -513,3 +503,4 @@ void app::initCoil() {
 bool app::isDialogShown() {
     return gScreens.back()->hasTransparency();
 }
+

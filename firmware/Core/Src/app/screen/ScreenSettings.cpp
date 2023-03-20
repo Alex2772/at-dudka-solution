@@ -76,7 +76,9 @@ R"(Кулдаун затяжек
 разве что только в
 жопу себе запихать
 (вейперам не
-привыкать).)")),
+привыкать,
+анимешникам - тем
+более).)")),
         //makeSetting("Тип блок-вки", ),
     }) {}
 };
@@ -111,6 +113,10 @@ R"(Плавный пуск по
 
 ScreenSettings::ScreenSettings(): ScreenList("Настройки", {
     makeSetting("Макс. мощность", [](auto v){ return util::format("%dW", v); }, &sram::Config::maxPower, 4u, 200u, 2u),
+    makeItem("Прожиг койла", [this] {
+        app::globals.burnoutMode = true;
+        app::closeScreen(this);
+    }),
     makeSetting("М-риал койла", &sram::Config::material),
     makeItem("Плавный пуск", makeShowScreen<ScreenSoftStartSettings>()),
     makeItem("Сон", makeShowScreen<ScreenSleepSettings>()),

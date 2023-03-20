@@ -50,6 +50,7 @@ namespace app {
         uint32_t lastActionTick = 0;
         float cooldownStreak = 0.f;
         uint32_t fireBeginTime = 0;
+        bool burnoutMode = false;
     };
     extern Globals globals;
 

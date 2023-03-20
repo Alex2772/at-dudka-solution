@@ -94,15 +94,15 @@ void adc::init() {
 }
 
 float adc::batteryVoltage() {
-    return config::calibrated::BATTERY_VOLTAGE(gAdc.bat);
+    return glm::max(0.f, config::calibrated::BATTERY_VOLTAGE(gAdc.bat));
 }
 
 float adc::shuntVoltage() {
-    return config::calibrated::SHUNT_VOLTAGE(gAdc.shunt);
+    return glm::max(0.f, config::calibrated::SHUNT_VOLTAGE(gAdc.shunt));
 }
 
 float adc::coilVoltage() {
-    return config::calibrated::COIL_VOLTAGE(gAdc.coil);
+    return glm::max(0.f, config::calibrated::COIL_VOLTAGE(gAdc.coil));
 }
 
 float adc::current() {

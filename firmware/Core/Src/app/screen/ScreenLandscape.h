@@ -24,6 +24,7 @@
 class ScreenLandscape: public IScreen {
 public:
     ScreenLandscape();
+    ~ScreenLandscape() override = default;
     void render(FramebufferImpl& fb) override;
 
     bool hasTransparency() override;
