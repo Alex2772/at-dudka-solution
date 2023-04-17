@@ -297,7 +297,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     }
                 }
 
-                if (static bool triggered = false; !triggered && !sram::config().mechModMode) {
+                if (static bool triggered = false; !triggered && !sram::config().mechModMode && !config::CALIBRATION) {
                     if (app::globals.smoothBatteryVoltage < config::BATTERY_LEVEL_CRITICAL && !app::isCharging()) {
                         triggered = true;
                         app::runOnUiThread([] {

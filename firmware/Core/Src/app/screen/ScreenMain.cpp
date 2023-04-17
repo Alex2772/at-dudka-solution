@@ -78,7 +78,14 @@ void ScreenMain::render(FramebufferImpl& fb) {
     row(116 - 12 * 5, "Бат", util::format("%0.2fV", app::globals.smoothBatteryVoltage));
     auto power = app::globals.smoothCurrent * app::globals.smoothBatteryVoltage;
     if (!sram::config().mechModMode) power = glm::min(power, app::maxPowerIncludingSoftStart());
-    row(116 - 12 * 4, "Мощ", util::format(power > 100.f ? "%0.0fW" : "%0.1fW", power));
+    static constexpr auto MAX_SHOW_PERIOD_MS = 1000;
+    const bool showMaxPower = (HAL_GetTick() % MAX_SHOW_PERIOD_MS < MAX_SHOW_PERIOD_MS / 2) && !app::fireButtonPressed();
+    if (showMaxPower) {
+        power = sram::config().maxPower;
+    }
+    row(116 - 12 * 4,
+        showMaxPower ? "Макс" : "Мощ",
+        showMaxPower ? util::format("%0.0fW", power) : util::format(power > 99.f ? "%0.0fW" : "%0.1fW", power));
     row(116 - 12 * 3, "Ток", util::format("%0.1fA", app::globals.smoothCurrent));
 
     if (app::globals.initialResistance) {

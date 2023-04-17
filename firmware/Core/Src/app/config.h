@@ -51,7 +51,7 @@ namespace config {
 
 
         static constexpr CalibrationCurve COIL_VOLTAGE({2903.f, 3191.f},
-                                                       {3.69f - 0.17f, 4.03f - 0.17f});
+                                                       {3.69f - 0.19f, 4.03f - 0.17f});
 
         static constexpr CalibrationCurve SHUNT_CURRENT({0.09f, 0.328f},
                                                         {0.f, 12.71f});
