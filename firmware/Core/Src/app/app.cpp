@@ -501,6 +501,6 @@ void app::initCoil() {
 }
 
 bool app::isDialogShown() {
-    return gScreens.back()->hasTransparency();
+    return !gScreens.empty() && gScreens.back()->hasTransparency();
 }
 

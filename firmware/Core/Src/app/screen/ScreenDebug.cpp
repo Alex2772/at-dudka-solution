@@ -37,7 +37,12 @@ void ScreenDebug::render(FramebufferImpl& fb) {
     row(0, std::string(util::format("%d", adc::calibrationData().batteryVoltage)), std::string(util::format("%0.2fV", adc::batteryVoltage())));
     row(8, std::string(util::format("%d", adc::calibrationData().shuntVoltage)), std::string(util::format("%0.2fV", adc::shuntVoltage())));
     row(16, std::string(util::format("%d", adc::calibrationData().coilVoltage)), std::string(util::format("%0.2fV", adc::coilVoltage())));
+
+#if AT_DUDKA_REV >= 2
+    row(24, std::string(util::format("%.3f", adc::shuntVoltage() - adc::coilVoltage())), std::string(util::format("%.2fA", app::globals.smoothCurrent)));
+#else
     row(24, std::string(util::format("%.3f", adc::batteryVoltage() - adc::shuntVoltage())), std::string(util::format("%.2fA", app::globals.smoothCurrent)));
+#endif
     row(32, std::string(util::format("%.3f", adc::shuntVoltage() - adc::coilVoltage())), std::string(util::format("%.2fOhm", adc::coilResistance().value_or(0.f))));
 
     char c = 0;

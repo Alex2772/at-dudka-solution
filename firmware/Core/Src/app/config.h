@@ -43,18 +43,18 @@ namespace config {
             glm::vec2 voltmeter;
         };
 
-        static constexpr CalibrationCurve BATTERY_VOLTAGE({ 2902.f, 3193.f},
-                                                          { 3.69f - 0.17f, 4.03f - 0.17f});
+        static constexpr CalibrationCurve BATTERY_VOLTAGE({ 0.f, 3200.f},
+                                                          { 0.f, 4.02f });
 
-        static constexpr CalibrationCurve SHUNT_VOLTAGE({2904.f, 3191.f},
-                                                  {3.69f - 0.17f, 4.03f - 0.17f});
+        static constexpr CalibrationCurve SHUNT_VOLTAGE({0.f, 3200.f},
+                                                  {0.f, 4.02f} );
 
 
-        static constexpr CalibrationCurve COIL_VOLTAGE({2903.f, 3191.f},
-                                                       {3.69f - 0.19f, 4.03f - 0.17f});
+        static constexpr CalibrationCurve COIL_VOLTAGE({0.f, 3200.f},
+                                                       {0.f, 4.02f });
 
-        static constexpr CalibrationCurve SHUNT_CURRENT({0.09f, 0.328f},
-                                                        {0.f, 12.71f});
+        static constexpr CalibrationCurve SHUNT_CURRENT({-0.007f, -0.074f},
+                                                        {0.f, 5.4f});
 
     }
 
