@@ -56,6 +56,11 @@ static ScreenMessageDialog::Action makeShutdownAction() {
 }
 
 extern "C" void app_run() {
+    if (!app::fireButtonPressed()) {
+        // accidental power up; silently shutdown
+        app::shutdown();
+    }
+
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
