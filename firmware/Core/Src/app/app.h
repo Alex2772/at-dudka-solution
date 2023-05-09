@@ -29,6 +29,7 @@
 #include "stm32f4xx.h"
 
 extern "C" I2C_HandleTypeDef hi2c1;
+extern "C" TIM_HandleTypeDef htim2;
 extern "C" TIM_HandleTypeDef htim3;
 extern "C" TIM_HandleTypeDef htim4;
 

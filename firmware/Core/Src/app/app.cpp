@@ -56,11 +56,10 @@ static ScreenMessageDialog::Action makeShutdownAction() {
 }
 
 extern "C" void app_run() {
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
-    app::powerLed() = 10000;
-    app::fireMosfet() = 0;
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
@@ -375,7 +374,8 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 unsigned& app::fireMosfet() {
-    return (unsigned int&) htim3.Instance->CCR2;
+    //return (unsigned int&) htim3.Instance->CCR2;
+    return (unsigned int&) htim2.Instance->CCR2;
 }
 
 unsigned& app::powerLed() {
