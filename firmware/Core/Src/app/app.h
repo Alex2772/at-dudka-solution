@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include "input.h"
 #include "config.h"
 #include "app/screen/IScreen.h"
