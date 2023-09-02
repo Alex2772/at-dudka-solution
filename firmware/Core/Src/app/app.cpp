@@ -28,6 +28,7 @@
 #include "sram.h"
 #include "rtc.h"
 #include "app/screen/ScreenInitializationDialog.h"
+#include "backup_registers.h"
 #include <ssd1306/SSD1306.h>
 #include <glm/gtc/constants.hpp>
 #include <vector>
@@ -227,6 +228,9 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             wasFiring = isFiring;
             if (isFiring) {
                 app::globals.fireBeginTime = HAL_GetTick();
+                backup_registers::visit([](backup_registers::Config& c) {
+                    c.puffCount += 1;
+                });
             }
         }
         auto instantCurrent = adc::current();

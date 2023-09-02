@@ -49,7 +49,7 @@ bool operator==(const sram::Config& lhs, const sram::Config& rhs) {
 extern "C" CRC_HandleTypeDef hcrc;
 
 static unsigned computeCrc(const sram::Config& cfg) {
-    unsigned crc = 0;
+    unsigned crc = 1;
     for (const auto b : reinterpret_cast<const std::array<std::uint8_t, sizeof(cfg)>&>(cfg)) {
         crc ^= b;
         crc <<= 1;

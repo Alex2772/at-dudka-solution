@@ -25,6 +25,7 @@
 #include "ScreenSettings.h"
 #include "ScreenMessageDialog.h"
 #include "ScreenConfirmDialog.h"
+#include "app/backup_registers.h"
 
 #include <stm32f4xx.h>
 
@@ -63,7 +64,7 @@ void ScreenMain::render(FramebufferImpl& fb) {
     }
 
     {
-        auto w = fb.string({32, 30}, Color::WHITE, enum_traits<Material>::name(sram::config().material), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
+        auto w = fb.string({32, 30}, Color::WHITE, util::format("%lu", backup_registers::config().puffCount), FONT_FACE_BITOCRA_7X13, TextAlign::MIDDLE);
         fb.roundedRect({32 - w / 2 - 3, 29}, { w + 5, 15 }, Color::INVERT);
     }
 
