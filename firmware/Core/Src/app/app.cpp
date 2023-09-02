@@ -374,8 +374,11 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 unsigned& app::fireMosfet() {
-    //return (unsigned int&) htim3.Instance->CCR2;
+#if AT_DUDKA_REV >= 2
     return (unsigned int&) htim2.Instance->CCR2;
+#else
+    return (unsigned int&) htim3.Instance->CCR2;
+#endif
 }
 
 unsigned& app::powerLed() {

@@ -92,4 +92,4 @@ execute_process(COMMAND
         OUTPUT_VARIABLE GIT_SHA1
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-target_compile_definitions(${PROJECT_NAME}.elf PRIVATE GIT_SHA1="${GIT_SHA1}")
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE GIT_SHA1="${GIT_SHA1}" AT_DUDKA_REV=2)
