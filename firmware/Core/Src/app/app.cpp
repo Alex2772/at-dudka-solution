@@ -64,6 +64,12 @@ extern "C" void app_run() {
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
+    // to debug mosfet uncomment this v
+
+    /*
+    app::fireMosfet() = 10000;
+    for (;;) {}*/
+
     adc::init();
     input::init();
 
@@ -187,7 +193,7 @@ extern "C" void app_run() {
         gUiThreadQueue.process();
         input::frame();
 
-        if (!app::globals.initialResistance && app::fireButtonPressed() && !app::isDialogShown()) {
+        if (!app::globals.initialResistance && app::fireButtonPressed() && !app::isDialogShown() && !sram::config().mechModMode) {
             auto dialog = ScreenMessageDialog::make("Нет койла");
             dialog->setIcon(image2cpp_warning_png);
             app::showScreen(std::move(dialog));
@@ -304,7 +310,7 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     if (app::globals.smoothBatteryVoltage < config::BATTERY_LEVEL_CRITICAL && !app::isCharging()) {
                         triggered = true;
                         app::runOnUiThread([] {
-                            auto dialog = ScreenMessageDialog::make("Аккум разряжен в хлам", { makeShutdownAction() });
+                            auto dialog = ScreenMessageDialog::make("Аккум разр. в хлам", { makeShutdownAction() });
                             dialog->setIcon(image2cpp_warning_png);
                             app::showScreen(std::move(dialog));
                         });
@@ -443,7 +449,7 @@ int app::batteryLevel() {
 }
 
 bool app::isCharging() {
-    return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
+    return false; //HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1);
 }
 
 float app::maxPowerIncludingSoftStart() {

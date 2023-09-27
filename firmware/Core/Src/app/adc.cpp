@@ -86,7 +86,7 @@ extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     gProcessedData.batteryVoltage = adc::batteryVoltage();
 
 #if AT_DUDKA_REV >= 2
-    gProcessedData.current = glm::max(config::calibrated::SHUNT_CURRENT(adc::shuntVoltage() - adc::coilVoltage()), 0.f);
+    gProcessedData.current = glm::max(config::calibrated::SHUNT_CURRENT(gAdc.shunt - gAdc.coil), 0.f);
     gProcessedData.coilResistance = glm::max((gProcessedData.batteryVoltage - adc::shuntVoltage()) / gProcessedData.current , 0.f);
 #else
     gProcessedData.current = glm::max(config::calibrated::SHUNT_CURRENT(gProcessedData.batteryVoltage- adc::shuntVoltage()), 0.f);

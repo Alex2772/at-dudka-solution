@@ -43,18 +43,18 @@ namespace config {
             glm::vec2 voltmeter;
         };
 
-        static constexpr CalibrationCurve BATTERY_VOLTAGE({ 0.f, 3200.f},
-                                                          { 0.f, 4.02f });
+        static constexpr CalibrationCurve BATTERY_VOLTAGE({ 2878.f, 3200.f},
+                                                          { 3.2f, 4.02f });
 
-        static constexpr CalibrationCurve SHUNT_VOLTAGE({0.f, 3200.f},
-                                                  {0.f, 4.02f} );
+        static constexpr CalibrationCurve SHUNT_VOLTAGE({2878.f, 3200.f},
+                                                        {3.2f, 4.02f} );
 
 
-        static constexpr CalibrationCurve COIL_VOLTAGE({0.f, 3200.f},
-                                                       {0.f, 4.02f });
+        static constexpr CalibrationCurve COIL_VOLTAGE({2878.f, 3200.f},
+                                                       {3.2f, 4.02f });
 
-        static constexpr CalibrationCurve SHUNT_CURRENT({-0.007f, -0.074f},
-                                                        {0.f, 5.4f});
+        static constexpr CalibrationCurve SHUNT_CURRENT({-5.f, -153.f},
+                                                        {0.f, 13.5f});
 
     }
 
@@ -77,7 +77,7 @@ namespace config {
     static constexpr auto CALIBRATION = false;
 
     static constexpr auto BATTERY_LEVEL_WARNING = 3.4f;
-    static constexpr auto BATTERY_LEVEL_CRITICAL = 3.f;
+    static constexpr auto BATTERY_LEVEL_CRITICAL = 3.3f;
 
     namespace pin {
         struct Pin {
